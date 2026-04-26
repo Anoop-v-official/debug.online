@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: #0a0a0a;
+    color: #ededed;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: rgba(0, 255, 136, 0.25);
+    color: #ededed;
+  }
+
+  *:focus-visible {
+    outline: 2px solid #00ff88;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-md
+           text-sm font-medium border border-border bg-surface text-text
+           transition-colors hover:bg-surface-2 hover:border-border-strong
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-bg border-accent hover:bg-accent-dim hover:border-accent-dim;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent border-transparent hover:bg-surface;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-md bg-surface border border-border text-text
+           font-mono text-sm placeholder:text-subtle focus:outline-none
+           focus:border-accent focus:ring-0;
+  }
+  .textarea {
+    @apply input resize-none leading-relaxed;
+  }
+  .card {
+    @apply bg-surface border border-border rounded-lg;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs
+           font-medium uppercase tracking-wide bg-surface-2 border border-border
+           text-muted;
+  }
+  .kbd {
+    @apply inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5
+           rounded border border-border bg-surface-2 font-mono text-2xs text-muted;
+  }
+}

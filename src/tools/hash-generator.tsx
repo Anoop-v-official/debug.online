@@ -1,0 +1,73 @@
+import { useEffect, useState } from 'react';
+import { ToolFrame } from '../components/ToolFrame';
+import { CopyButton } from '../components/CopyButton';
+import { toolBySlug } from '../lib/tools';
+
+const tool = toolBySlug['hash-generator']!;
+
+const ALGOS = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'] as const;
+type Algo = (typeof ALGOS)[number];
+
+async function hash(algo: Algo, input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const buf = await crypto.subtle.digest(algo, data);
+  return [...new Uint8Array(buf)]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export default function HashGenerator() {
+  const [input, setInput] = useState('hello, world');
+  const [algo, setAlgo] = useState<Algo>('SHA-256');
+  const [out, setOut] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!input) {
+      setOut('');
+      return;
+    }
+    hash(algo, input).then((h) => {
+      if (!cancelled) setOut(h);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [input, algo]);
+
+  return (
+    <ToolFrame
+      tool={tool}
+      actions={
+        <>
+          <select
+            value={algo}
+            onChange={(e) => setAlgo(e.target.value as Algo)}
+            className="input w-auto py-1.5"
+            aria-label="Algorithm"
+          >
+            {ALGOS.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+          <CopyButton text={out} />
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          rows={6}
+          spellCheck={false}
+          className="textarea"
+        />
+        <pre className="card p-3 text-xs font-mono break-all whitespace-pre-wrap">
+          {out || <span className="text-subtle">hash will appear here</span>}
+        </pre>
+      </div>
+    </ToolFrame>
+  );
+}
