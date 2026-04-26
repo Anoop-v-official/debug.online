@@ -73,7 +73,7 @@ export default function DiffViewer() {
         <div className="text-2xs uppercase tracking-wide text-subtle font-mono px-3 py-2 border-b border-border">
           Unified diff
         </div>
-        <pre className="text-xs font-mono p-3 overflow-auto max-h-[300px]">
+        <pre className="text-xs font-mono p-3 overflow-auto max-h-[60vh]">
           {ops.map((op, i) => {
             if (op.kind === 'eq')
               return (

@@ -75,11 +75,11 @@ export default function Base64() {
         }
         right={
           output.ok ? (
-            <pre className="card p-3 text-xs font-mono overflow-auto h-[280px] whitespace-pre-wrap break-all">
-              {output.text || <span className="text-subtle">empty</span>}
+            <pre className="pane-wrap">
+              {output.text || <span className="text-subtle">Output appears here.</span>}
             </pre>
           ) : (
-            <pre className="card p-3 text-xs font-mono text-error">{output.error}</pre>
+            <pre className="pane-wrap text-error">{output.error}</pre>
           )
         }
       />

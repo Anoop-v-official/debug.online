@@ -40,18 +40,24 @@ export function Home({ onOpenPalette }: { onOpenPalette: () => void }) {
     .slice(0, 4);
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+    <div className="space-y-10">
+      <section className="space-y-6">
+        <div className="space-y-3 max-w-3xl">
+          <span className="inline-flex items-center gap-2 chip">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-soft" />
+            {tools.length} tools · AI insights · 100% free
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
             The IT toolkit that{' '}
             <span className="text-accent">explains itself</span>.
           </h1>
-          <p className="text-muted max-w-xl">
-            {tools.length} instant tools — DNS, SSL, JWT, JSON, regex and more —
-            with smart context that flags anomalies and suggests the next move.
+          <p className="text-muted text-base sm:text-lg max-w-2xl leading-relaxed">
+            DNS, SSL, JWT, JSON, regex and more — all instant, all in your
+            browser. Optional Smart Context flags anomalies and suggests the
+            next move.
           </p>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="search"
@@ -65,20 +71,26 @@ export function Home({ onOpenPalette }: { onOpenPalette: () => void }) {
             Open palette <span className="kbd">⌘K</span>
           </button>
         </div>
+
         <div className="flex flex-wrap gap-1.5">
           <CategoryChip
             label="All"
+            count={tools.length}
             active={filter === 'all'}
             onClick={() => setFilter('all')}
           />
-          {(Object.keys(categoryLabels) as Category[]).map((c) => (
-            <CategoryChip
-              key={c}
-              label={categoryLabels[c]}
-              active={filter === c}
-              onClick={() => setFilter(c)}
-            />
-          ))}
+          {(Object.keys(categoryLabels) as Category[]).map((c) => {
+            const count = tools.filter((t) => t.category === c).length;
+            return (
+              <CategoryChip
+                key={c}
+                label={categoryLabels[c]}
+                count={count}
+                active={filter === c}
+                onClick={() => setFilter(c)}
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -106,7 +118,7 @@ export function Home({ onOpenPalette }: { onOpenPalette: () => void }) {
           <h2 className="text-sm font-mono uppercase tracking-wide text-subtle">
             All tools
           </h2>
-          <span className="text-2xs font-mono text-subtle">
+          <span className="text-xs font-mono text-subtle">
             {filtered.length} / {tools.length}
           </span>
         </div>
@@ -124,10 +136,12 @@ export function Home({ onOpenPalette }: { onOpenPalette: () => void }) {
 
 function CategoryChip({
   label,
+  count,
   active,
   onClick,
 }: {
   label: string;
+  count: number;
   active: boolean;
   onClick: () => void;
 }) {
@@ -136,13 +150,14 @@ function CategoryChip({
       type="button"
       onClick={onClick}
       className={
-        'px-2.5 py-1 rounded-full text-2xs uppercase tracking-wide font-medium border transition-colors ' +
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ' +
         (active
           ? 'bg-accent/10 border-accent text-accent'
-          : 'bg-surface-2 border-border text-muted hover:text-text')
+          : 'bg-surface-2 border-border text-muted hover:text-text hover:border-border-strong')
       }
     >
-      {label}
+      <span>{label}</span>
+      <span className={active ? 'text-accent/80' : 'text-subtle'}>{count}</span>
     </button>
   );
 }

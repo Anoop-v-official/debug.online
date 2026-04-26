@@ -53,8 +53,15 @@ export function App() {
     <Layout onOpenPalette={() => setPaletteOpen(true)}>
       <Suspense
         fallback={
-          <div className="p-8 text-muted text-sm font-mono animate-pulse-soft">
-            loading…
+          <div className="space-y-4 animate-pulse">
+            <div className="h-8 w-1/3 rounded bg-surface" />
+            <div className="h-4 w-1/2 rounded bg-surface" />
+            <div className="card p-4 sm:p-5">
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="h-[280px] rounded bg-surface-2" />
+                <div className="h-[280px] rounded bg-surface-2" />
+              </div>
+            </div>
           </div>
         }
       >

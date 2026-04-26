@@ -64,8 +64,8 @@ export default function HashGenerator() {
           spellCheck={false}
           className="textarea"
         />
-        <pre className="card p-3 text-xs font-mono break-all whitespace-pre-wrap">
-          {out || <span className="text-subtle">hash will appear here</span>}
+        <pre className="card p-3 text-xs font-mono break-all whitespace-pre-wrap min-h-[80px] flex items-center">
+          {out || <span className="text-subtle">Hash appears here.</span>}
         </pre>
       </div>
     </ToolFrame>

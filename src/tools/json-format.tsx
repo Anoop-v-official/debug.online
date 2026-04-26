@@ -67,15 +67,13 @@ export default function JsonFormat() {
         }
         right={
           result.ok ? (
-            <pre className="card p-3 text-xs font-mono overflow-auto h-[368px] whitespace-pre">
+            <pre className="pane">
               {result.text || (
-                <span className="text-subtle">Output will appear here.</span>
+                <span className="text-subtle">Output appears here.</span>
               )}
             </pre>
           ) : (
-            <pre className="card p-3 text-xs font-mono text-error overflow-auto h-[368px] whitespace-pre-wrap">
-              {result.error}
-            </pre>
+            <pre className="pane-wrap text-error">{result.error}</pre>
           )
         }
       />

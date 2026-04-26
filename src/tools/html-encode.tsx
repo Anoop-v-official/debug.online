@@ -64,8 +64,8 @@ export default function HtmlEncode() {
           />
         }
         right={
-          <pre className="card p-3 text-xs font-mono overflow-auto h-[232px] whitespace-pre-wrap break-all">
-            {output || <span className="text-subtle">empty</span>}
+          <pre className="pane-wrap">
+            {output || <span className="text-subtle">Output appears here.</span>}
           </pre>
         }
       />

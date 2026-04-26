@@ -56,12 +56,17 @@ export function InsightPanel({ toolSlug, input, output, enabled = true }: Props)
 
   return (
     <aside className="card p-4 space-y-2 border-dashed">
-      <div className="flex items-center justify-between">
-        <span className="text-2xs uppercase tracking-wide text-subtle font-mono">
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted font-mono">
+          <span className="inline-flex items-center gap-1 chip text-accent border-accent/40 bg-accent/10">
+            AI
+          </span>
           Smart context
         </span>
         {loading ? (
-          <span className="text-2xs text-subtle animate-pulse-soft">thinking…</span>
+          <span className="text-xs text-subtle font-mono animate-pulse-soft">
+            thinking…
+          </span>
         ) : null}
       </div>
       {err ? (

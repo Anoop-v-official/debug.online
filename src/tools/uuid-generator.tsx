@@ -36,9 +36,7 @@ export default function UuidGenerator() {
         </>
       }
     >
-      <pre className="card p-3 text-xs font-mono overflow-auto max-h-[400px] whitespace-pre">
-        {list.join('\n')}
-      </pre>
+      <pre className="pane">{list.join('\n')}</pre>
     </ToolFrame>
   );
 }

@@ -45,25 +45,30 @@ export function ToolFrame({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-2xs text-subtle font-mono mb-1">
-            <Link to="/" className="hover:text-text">
-              ← back
+          <div className="flex items-center gap-2 text-xs text-muted font-mono mb-1.5">
+            <Link to="/" className="hover:text-text transition-colors">
+              ← All tools
             </Link>
-            <span>·</span>
+            <span className="text-subtle">/</span>
             <span className="chip">{categoryLabels[tool.category]}</span>
           </div>
-          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight flex items-center gap-3">
             {tool.name}
             <button
               type="button"
               onClick={() => toggle(tool.slug)}
               aria-label={fav ? 'Unfavorite' : 'Favorite'}
-              className="text-muted hover:text-accent transition-colors text-base"
+              aria-pressed={fav}
+              className={`transition-colors text-xl leading-none ${
+                fav ? 'text-accent' : 'text-subtle hover:text-accent'
+              }`}
             >
               {fav ? '★' : '☆'}
             </button>
           </h1>
-          <p className="text-sm text-muted mt-1">{tool.description}</p>
+          <p className="text-sm sm:text-base text-muted mt-1.5 max-w-2xl">
+            {tool.description}
+          </p>
         </div>
         {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
       </div>

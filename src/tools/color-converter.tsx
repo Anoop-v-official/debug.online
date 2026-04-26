@@ -108,7 +108,7 @@ export default function ColorConverter() {
         {parsed ? (
           <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
             <div
-              className="rounded-lg border border-border h-32 sm:h-full"
+              className="rounded-lg border border-border h-32 sm:h-auto sm:min-h-[140px]"
               style={{ background: rgbToHex(parsed) }}
               aria-label="Color preview"
             />

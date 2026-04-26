@@ -26,7 +26,7 @@ export function CookieBanner() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:right-3 sm:bottom-3 sm:max-w-sm z-40
+    <div className="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:left-3 sm:bottom-3 sm:max-w-sm z-40
                     card p-3 shadow-glow text-xs text-muted">
       <p className="leading-relaxed">
         We use local storage for your preferences and may show ads on tool pages

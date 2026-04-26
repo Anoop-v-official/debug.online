@@ -123,7 +123,7 @@ export default function MarkdownPreview() {
         }
         right={
           <div
-            className="card p-4 prose prose-invert max-w-none text-sm overflow-auto h-[368px]
+            className="card p-4 prose prose-invert max-w-none text-sm overflow-auto min-h-[280px] max-h-[60vh]
                        [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm
                        [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-medium
                        [&_h1]:mt-0 [&_h1]:mb-2 [&_h2]:mt-3 [&_h2]:mb-2 [&_h3]:mt-2 [&_h3]:mb-1

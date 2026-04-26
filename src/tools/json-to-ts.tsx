@@ -110,11 +110,9 @@ export default function JsonToTs() {
         }
         right={
           result.ok ? (
-            <pre className="card p-3 text-xs font-mono overflow-auto h-[368px] whitespace-pre">
-              {result.text}
-            </pre>
+            <pre className="pane">{result.text}</pre>
           ) : (
-            <pre className="card p-3 text-xs font-mono text-error">{result.error}</pre>
+            <pre className="pane-wrap text-error">{result.error}</pre>
           )
         }
       />

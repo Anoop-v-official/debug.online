@@ -50,10 +50,13 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-md
+    @apply inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md
            text-sm font-medium border border-border bg-surface text-text
            transition-colors hover:bg-surface-2 hover:border-border-strong
            disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1.5 text-xs;
   }
   .btn-accent {
     @apply btn bg-accent text-bg border-accent hover:bg-accent-dim hover:border-accent-dim;
@@ -67,13 +70,19 @@
            focus:border-accent focus:ring-0;
   }
   .textarea {
-    @apply input resize-none leading-relaxed;
+    @apply input resize-y leading-relaxed min-h-[280px];
   }
   .card {
     @apply bg-surface border border-border rounded-lg;
   }
+  .pane {
+    @apply card p-3 text-xs font-mono overflow-auto min-h-[280px] max-h-[60vh] whitespace-pre;
+  }
+  .pane-wrap {
+    @apply pane whitespace-pre-wrap break-all;
+  }
   .chip {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.7rem]
            font-medium uppercase tracking-wide bg-surface-2 border border-border
            text-muted;
   }
@@ -81,4 +90,18 @@
     @apply inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5
            rounded border border-border bg-surface-2 font-mono text-2xs text-muted;
   }
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50
+           focus:bg-accent focus:text-bg focus:px-3 focus:py-1.5 focus:rounded-md
+           focus:font-medium focus:text-sm;
+  }
+}
+
+@layer utilities {
+  .stripe-encode { box-shadow: inset 3px 0 0 #00ff88; }
+  .stripe-format { box-shadow: inset 3px 0 0 #58a6ff; }
+  .stripe-inspect { box-shadow: inset 3px 0 0 #d2a8ff; }
+  .stripe-generate { box-shadow: inset 3px 0 0 #f5a623; }
+  .stripe-network { box-shadow: inset 3px 0 0 #ff7b72; }
+  .stripe-convert { box-shadow: inset 3px 0 0 #79c0ff; }
 }
