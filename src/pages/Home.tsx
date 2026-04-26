@@ -4,10 +4,17 @@ import { ToolGrid } from '../components/ToolGrid';
 import { categoryLabels, tools, toolBySlug, type Category } from '../lib/tools';
 import { useFavoritesStore } from '../store/favorites';
 import { useHistoryStore } from '../store/history';
+import { useSeo } from '../lib/seo';
 
 const carbonServe = import.meta.env.VITE_CARBON_SERVE as string | undefined;
 
 export function Home({ onOpenPalette }: { onOpenPalette: () => void }) {
+  useSeo({
+    title: 'debug.online — Free IT & Developer Toolkit with AI Insights',
+    description: `${tools.length} fast, browser-based tools — JSON, JWT, regex, base64, DNS, SSL and more — with optional AI Smart Context that explains every result.`,
+    path: '/',
+  });
+
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Category | 'all'>('all');
   const favSlugs = useFavoritesStore((s) => s.slugs);

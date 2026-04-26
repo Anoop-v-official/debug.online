@@ -3,7 +3,12 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { NotFound } from './pages/NotFound';
+import { Privacy } from './pages/Privacy';
+import { Terms } from './pages/Terms';
+import { About } from './pages/About';
+import { Contact } from './pages/Contact';
 import { CommandPalette } from './components/CommandPalette';
+import { CookieBanner } from './components/CookieBanner';
 import { useHistoryStore } from './store/history';
 import { tools } from './lib/tools';
 
@@ -56,6 +61,10 @@ export function App() {
         <Routes>
           <Route path="/" element={<Home onOpenPalette={() => setPaletteOpen(true)} />} />
           <Route path="/tools/:slug" element={<ToolPage onVisit={recordVisit} />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
@@ -68,6 +77,7 @@ export function App() {
           navigate(`/tools/${slug}`);
         }}
       />
+      <CookieBanner />
     </Layout>
   );
 }
