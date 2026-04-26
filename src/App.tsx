@@ -11,6 +11,8 @@ import { CommandPalette } from './components/CommandPalette';
 import { CookieBanner } from './components/CookieBanner';
 import { useHistoryStore } from './store/history';
 import { tools } from './lib/tools';
+import { isTauri } from './lib/runtime';
+import { sniffClipboard } from './lib/clipboardSniff';
 
 const ToolPage = lazy(() =>
   import('./pages/ToolPage').then((m) => ({ default: m.ToolPage })),
@@ -40,7 +42,6 @@ export function App() {
           target.tagName === 'TEXTAREA' ||
           target.isContentEditable);
       if (inField) return;
-
       if (e.key === '?') {
         setPaletteOpen(true);
       }
@@ -48,6 +49,28 @@ export function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // Native: when summoned via global shortcut, sniff clipboard and jump.
+  useEffect(() => {
+    if (!isTauri) return;
+    let unlisten: (() => void) | undefined;
+
+    async function doSniff() {
+      const result = await sniffClipboard();
+      if (result?.kind) navigate(`/tools/${result.kind}`);
+    }
+
+    (async () => {
+      const { listen } = await import('@tauri-apps/api/event');
+      unlisten = await listen('focus-clipboard-sniff', doSniff);
+      // Also sniff on initial app start
+      doSniff();
+    })();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [navigate]);
 
   return (
     <Layout onOpenPalette={() => setPaletteOpen(true)}>
@@ -84,7 +107,7 @@ export function App() {
           navigate(`/tools/${slug}`);
         }}
       />
-      <CookieBanner />
+      {!isTauri ? <CookieBanner /> : null}
     </Layout>
   );
 }

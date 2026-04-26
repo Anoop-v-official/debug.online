@@ -2,18 +2,11 @@ import { useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
+import { sslCheck, type SslInfo } from '../lib/sslClient';
 
 const tool = toolBySlug['ssl-check']!;
 
-interface CertInfo {
-  subject: string;
-  issuer: string;
-  validFrom: string;
-  validTo: string;
-  daysRemaining: number;
-  altNames: string[];
-  protocol?: string;
-}
+type CertInfo = SslInfo;
 
 export default function SslCheck() {
   const [host, setHost] = useState('example.com');
@@ -26,12 +19,7 @@ export default function SslCheck() {
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetch(`/api/ssl?host=${encodeURIComponent(host)}`);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
-      }
-      setData((await res.json()) as CertInfo);
+      setData(await sslCheck(host));
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'check failed');
     } finally {

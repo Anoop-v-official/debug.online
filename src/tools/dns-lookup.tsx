@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
+import { dnsLookup, type DnsAnswer } from '../lib/dnsClient';
 
 const tool = toolBySlug['dns-lookup']!;
 
 const TYPES = ['A', 'AAAA', 'MX', 'TXT', 'NS', 'CNAME'] as const;
 type RecordType = (typeof TYPES)[number];
 
-interface Answer {
-  type: RecordType;
-  records: Array<{ value: string; ttl?: number; priority?: number }>;
-}
+type Answer = DnsAnswer;
 
 export default function DnsLookup() {
   const [host, setHost] = useState('example.com');
@@ -25,14 +23,7 @@ export default function DnsLookup() {
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetch(
-        `/api/dns?host=${encodeURIComponent(host)}&type=${type}`,
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
-      }
-      setData((await res.json()) as Answer);
+      setData(await dnsLookup(host, type));
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'lookup failed');
     } finally {
