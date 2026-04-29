@@ -621,6 +621,696 @@ export const tools: Tool[] = [
       ],
     },
   },
+  {
+    slug: 'password-generator',
+    name: 'Password Generator',
+    description: 'Generate strong passwords or passphrases entirely in your browser.',
+    category: 'generate',
+    keywords: ['password', 'passphrase', 'random', 'secure', 'strong', 'generator'],
+    Component: lazy(() => import('../tools/password-generator')),
+    seo: {
+      title: 'Strong Password & Passphrase Generator — Online, 100% Client-Side',
+      description:
+        'Generate cryptographically random passwords or readable passphrases. Custom length, character classes, similar-character exclusion. Runs entirely in your browser.',
+    },
+    content: {
+      about:
+        'Uses crypto.getRandomValues for true randomness. Switch between random character passwords and human-readable passphrases. The strength meter rates the result by entropy, not just length.',
+      useCases: [
+        'Spinning up a new admin account where you need a secret you won\'t reuse.',
+        'Generating a memorable passphrase for SSH key encryption or a 1Password vault.',
+        'Producing a non-rotatable secret for an internal service or a CI runner.',
+      ],
+      gotchas: [
+        'Length matters more than complexity. A 20-character random string already exceeds most attack budgets.',
+        'Don\'t reuse generated values across services — that defeats the point of generating them.',
+      ],
+    },
+  },
+  {
+    slug: 'css-unit-converter',
+    name: 'CSS Unit Converter',
+    description: 'Convert px, rem, em, pt, vw, vh and % with full context.',
+    category: 'convert',
+    keywords: ['css', 'px', 'rem', 'em', 'vh', 'vw', 'unit', 'convert'],
+    Component: lazy(() => import('../tools/css-unit-converter')),
+    seo: {
+      title: 'CSS Unit Converter — px to rem, em, vh, vw, % Online',
+      description:
+        'Convert any CSS unit to all common alternatives at once. Configurable root and parent font size, plus viewport width and height. Live, accurate, no surprises.',
+    },
+    content: {
+      about:
+        'Takes a value in any common CSS unit and shows it in every other one, given your root font size, parent font size, and viewport dimensions. Great for translating designer specs into responsive code.',
+      useCases: [
+        'Translating Figma px values into rem so they scale with the user\'s preferred font size.',
+        'Working out the vw equivalent of a fixed pixel breakpoint.',
+        'Converting print-style pt values to web px.',
+      ],
+      gotchas: [
+        'em depends on the *parent* element\'s font size, not the root. The Parent input here is your assumption.',
+        'vw and vh depend on the actual viewport at render time. The values you pick here are a snapshot.',
+      ],
+    },
+  },
+  {
+    slug: 'cidr-calculator',
+    name: 'CIDR / Subnet Calculator',
+    description: 'Break a CIDR block into network, broadcast, mask and usable hosts.',
+    category: 'network',
+    keywords: ['cidr', 'subnet', 'ipv4', 'mask', 'network', 'broadcast', 'aws', 'vpc'],
+    Component: lazy(() => import('../tools/cidr-calculator')),
+    seo: {
+      title: 'CIDR / Subnet Calculator — IPv4 Online',
+      description:
+        'Enter any IPv4 CIDR block and see the network address, broadcast, netmask, wildcard, first/last usable IP, and total host count. AWS VPC friendly.',
+    },
+    content: {
+      about:
+        'Pure-bitmath calculator for IPv4 CIDR blocks. Tells you exactly which addresses live inside the block, the netmask in dotted-decimal, and the wildcard (inverse mask) used by some firewall rules.',
+      useCases: [
+        'Picking a non-overlapping VPC CIDR before you create the AWS subnets.',
+        'Sanity-checking a /29 you\'re about to assign to a router.',
+        'Translating between dotted netmask (255.255.255.0) and slash form (/24).',
+      ],
+      gotchas: [
+        '/31 and /32 are special — there is no broadcast/network in the usual sense, so usable host count == total.',
+        'IPv6 calculations need a different tool — this is IPv4 only.',
+      ],
+    },
+  },
+  {
+    slug: 'env-diff',
+    name: '.ENV File Diff',
+    description: 'Compare two .env files: missing keys, changed values, extras.',
+    category: 'inspect',
+    keywords: ['env', 'dotenv', 'diff', 'compare', 'environment', 'variables'],
+    Component: lazy(() => import('../tools/env-diff')),
+    seo: {
+      title: '.ENV File Diff & Validator — Compare Environment Variables Online',
+      description:
+        'Paste two .env files; instantly see missing keys, changed values, and extras between A and B. Catches deploy-time env drift before it hits production.',
+    },
+    content: {
+      about:
+        'Parses both pasted .env blobs (handling quoted values and comments) and groups every key into one of four buckets: missing in B, added in B, changed value, or identical. Pure browser comparison — your env never leaves your machine.',
+      useCases: [
+        'Confirming staging and production envs match before a release.',
+        'Diffing a teammate\'s `.env.example` against your `.env.local` to spot keys you forgot to add.',
+        'Auditing a leaked .env to see what\'s extra compared to the one in version control.',
+      ],
+    },
+  },
+  {
+    slug: 'gradient-generator',
+    name: 'CSS Gradient Generator',
+    description: 'Build linear, radial and conic gradients visually.',
+    category: 'generate',
+    keywords: ['gradient', 'css', 'linear', 'radial', 'conic', 'background'],
+    Component: lazy(() => import('../tools/gradient-generator')),
+    seo: {
+      title: 'CSS Gradient Generator — Linear, Radial & Conic Online',
+      description:
+        'Visual builder for CSS gradients with unlimited stops, angle control, and live preview. Copies clean modern CSS for linear-, radial-, and conic-gradient.',
+    },
+    content: {
+      about:
+        'Drag stops, pick colors, change direction; the CSS string updates live. Add as many color stops as the design needs and pick from a small set of presets to start.',
+      useCases: [
+        'Crafting a hero background that doesn\'t scream "gradient generator".',
+        'Iterating on a button hover-state background without leaving the browser.',
+        'Producing a quick conic gradient for a loading spinner.',
+      ],
+      gotchas: [
+        'Conic gradients aren\'t supported in older browsers — check your target matrix before relying on them.',
+      ],
+    },
+  },
+  {
+    slug: 'shadow-generator',
+    name: 'Box & Text Shadow Generator',
+    description: 'Multi-layer box-shadow and text-shadow with live preview.',
+    category: 'generate',
+    keywords: ['shadow', 'box-shadow', 'text-shadow', 'css', 'tailwind'],
+    Component: lazy(() => import('../tools/shadow-generator')),
+    seo: {
+      title: 'Box Shadow & Text Shadow Generator — CSS Online',
+      description:
+        'Stack multiple shadow layers, tweak x/y/blur/spread/color independently, and see a live preview. Outputs clean CSS for box-shadow or text-shadow.',
+    },
+    content: {
+      about:
+        'Builds CSS shadows visually with full multi-layer support. Each layer has its own offset, blur, spread, color, and inset toggle. Switch between box-shadow and text-shadow modes without losing your layers.',
+      useCases: [
+        'Designing a soft, layered card shadow that looks better than a single rgba blur.',
+        'Faking an inset glow by combining a positive and a negative spread.',
+        'Generating a vintage text-shadow stack for a hero headline.',
+      ],
+      gotchas: [
+        'Each shadow layer is rendered, so 6+ layers can become expensive on low-end mobile.',
+        'spread is not available for text-shadow — only box-shadow.',
+      ],
+    },
+  },
+  {
+    slug: 'contrast-checker',
+    name: 'Color Contrast Checker',
+    description: 'Check WCAG 2.1 AA/AAA contrast ratios with live preview.',
+    category: 'inspect',
+    keywords: ['contrast', 'wcag', 'a11y', 'accessibility', 'color', 'ratio'],
+    Component: lazy(() => import('../tools/contrast-checker')),
+    seo: {
+      title: 'Color Contrast Checker — WCAG 2.1 AA / AAA Online',
+      description:
+        'Pass a foreground and background color; see the contrast ratio, AA and AAA verdicts for both body and large text, and a live preview. Built on the standard relative-luminance formula.',
+    },
+    content: {
+      about:
+        'Computes the WCAG 2.1 contrast ratio between two colors using the standard relative-luminance formula. Shows pass/fail for AA (4.5:1 body, 3:1 large) and AAA (7:1 body, 4.5:1 large).',
+      useCases: [
+        'Verifying a brand color combo meets accessibility guidelines before shipping a redesign.',
+        'Auditing a button\'s focus state contrast.',
+        'Picking which of several "muted" text colors meets AA against your background.',
+      ],
+      gotchas: [
+        'WCAG 2.1 contrast doesn\'t account for font weight or anti-aliasing — designs that look low-contrast may technically pass, and vice versa.',
+        'For users with limited vision, AAA is the safer bar for body text.',
+      ],
+    },
+  },
+  {
+    slug: 'image-to-base64',
+    name: 'Image to Base64',
+    description: 'Convert any image to a Base64 data URL ready for HTML or CSS.',
+    category: 'convert',
+    keywords: ['image', 'base64', 'data-url', 'png', 'jpg', 'svg', 'webp', 'embed'],
+    Component: lazy(() => import('../tools/image-to-base64')),
+    seo: {
+      title: 'Image to Base64 Data URL Converter — Online',
+      description:
+        'Drop a PNG, JPG, SVG, GIF or WebP and get a Base64 data URL ready to paste into HTML or CSS. Runs entirely in your browser — files never leave your machine.',
+    },
+    content: {
+      about:
+        'Reads any image with the browser\'s FileReader and outputs a Base64 data URL plus ready-to-paste HTML and CSS snippets. Files never leave your device.',
+      useCases: [
+        'Embedding a small icon directly into HTML to save a request.',
+        'Inlining a tiny background image so a cached CSS file is self-contained.',
+        'Generating a data URL for a quick demo or codepen.',
+      ],
+      gotchas: [
+        'Base64 inflates size by ~33%. Inline only when the request savings outweigh the bigger payload.',
+        'Browsers cap a single data URL\'s size — keep inlined assets well under 10 kB for best practice.',
+      ],
+    },
+  },
+  {
+    slug: 'svg-optimizer',
+    name: 'SVG Optimizer',
+    description: 'Strip metadata, comments and editor cruft from SVG markup.',
+    category: 'format',
+    keywords: ['svg', 'optimize', 'minify', 'compress', 'inkscape', 'figma'],
+    Component: lazy(() => import('../tools/svg-optimizer')),
+    seo: {
+      title: 'SVG Optimizer Online — Strip Metadata, Comments & Editor Cruft',
+      description:
+        'Paste SVG markup and get a clean, smaller version with comments, doctypes, editor namespaces and generated IDs removed. Side-by-side preview to verify.',
+    },
+    content: {
+      about:
+        'Removes the kind of bloat editors like Inkscape, Sketch, and Figma add to exported SVGs: comments, DOCTYPE, vendor namespaces, generated IDs, and overlong decimals. Renders both versions side by side so you can confirm nothing visual changed.',
+      useCases: [
+        'Slimming an icon set before bundling into an app.',
+        'Cleaning a designer-handed-off SVG before pasting it into a JSX component.',
+        'Quick preview of what\'s actually inside an SVG you got from the internet.',
+      ],
+      gotchas: [
+        'For path-level optimization (rounding coords, merging paths), use SVGO. This is a fast in-browser textual cleanup.',
+      ],
+    },
+  },
+  {
+    slug: 'yaml-validator',
+    name: 'YAML Validator',
+    description: 'Validate YAML and round-trip it to JSON.',
+    category: 'format',
+    keywords: ['yaml', 'kubernetes', 'k8s', 'docker-compose', 'validate', 'json'],
+    Component: lazy(() => import('../tools/yaml-validator')),
+    seo: {
+      title: 'YAML Validator & YAML ↔ JSON Converter — Online',
+      description:
+        'Paste YAML, get instant validation with line-aware errors. Convert to JSON or re-format clean YAML. Perfect for Kubernetes manifests and Docker Compose files.',
+    },
+    content: {
+      about:
+        'Backed by js-yaml, the same parser used in many Node tools. Errors include line and column numbers so you can jump straight to the broken indentation.',
+      useCases: [
+        'Spotting why your Kubernetes manifest fails to apply because of a tab character.',
+        'Converting a YAML config to JSON for a script that doesn\'t parse YAML.',
+        'Re-flowing hand-edited YAML to canonical form before committing.',
+      ],
+      gotchas: [
+        'YAML 1.2 is followed strictly — "yes/no/on/off" parse as booleans only in 1.1 mode.',
+        'Anchors and merge keys (<<) are supported, but not all downstream YAML consumers are.',
+      ],
+    },
+  },
+  {
+    slug: 'sql-formatter',
+    name: 'SQL Formatter',
+    description: 'Format messy SQL across MySQL, Postgres, MSSQL and more.',
+    category: 'format',
+    keywords: ['sql', 'format', 'mysql', 'postgresql', 'tsql', 'snowflake', 'bigquery'],
+    Component: lazy(() => import('../tools/sql-formatter')),
+    seo: {
+      title: 'SQL Formatter Online — MySQL, Postgres, MSSQL, Snowflake, BigQuery',
+      description:
+        'Paste a one-line query, get clean indented SQL. Pick your dialect, tab width, and keyword case. Powered by sql-formatter — no upload, all in your browser.',
+    },
+    content: {
+      about:
+        'Wraps the open-source sql-formatter library so you can format SQL across nine dialects without installing anything. Pick the dialect that matches your warehouse to keep dialect-specific keywords (e.g. PostgreSQL\'s WINDOW, BigQuery\'s STRUCT) intact.',
+      useCases: [
+        'Reading a one-line query pulled from a log into something a human can review.',
+        'Cleaning up a query before pasting it into a PR or doc.',
+        'Normalizing case in legacy SQL where someone wrote `SELECT` and `select` in the same file.',
+      ],
+      gotchas: [
+        'Dialect choice matters — the wrong one can mis-tokenize a keyword or quote.',
+        'Comments are preserved verbatim, including their position relative to surrounding tokens.',
+      ],
+    },
+  },
+  {
+    slug: 'bcrypt-tester',
+    name: 'Bcrypt Hash Tester',
+    description: 'Generate or verify bcrypt password hashes in your browser.',
+    category: 'generate',
+    keywords: ['bcrypt', 'hash', 'password', 'verify', 'salt', 'cost'],
+    Component: lazy(() => import('../tools/bcrypt-tester')),
+    seo: {
+      title: 'Bcrypt Hash Generator & Verifier — Online, Client-Side',
+      description:
+        'Generate a bcrypt hash for any password or verify a password against an existing hash. Choose the cost factor. Runs entirely in your browser via bcryptjs.',
+    },
+    content: {
+      about:
+        'Generates bcrypt hashes with a chosen cost factor (4–14) using bcryptjs in WebAssembly. Verify mode lets you confirm a password matches an existing `$2a$…` hash without sending either to a server.',
+      useCases: [
+        'Setting up a seed user in a fresh database — paste the generated hash directly.',
+        'Debugging a login flow where a hash from one library doesn\'t verify in another.',
+        'Picking a cost factor for production by feeling how long each step actually takes in your environment.',
+      ],
+      gotchas: [
+        'Bcrypt truncates at 72 bytes. Long passphrases get silently shortened.',
+        'Browser bcrypt is slower than native — production cost factor decisions should match the runtime that actually verifies, not the browser.',
+      ],
+    },
+  },
+  {
+    slug: 'fake-data-generator',
+    name: 'Test Data Generator',
+    description: 'Generate realistic-looking fake users for testing, JSON or CSV.',
+    category: 'generate',
+    keywords: ['fake', 'mock', 'test-data', 'seed', 'csv', 'json', 'faker'],
+    Component: lazy(() => import('../tools/fake-data-generator')),
+    seo: {
+      title: 'Test Data Generator — Realistic Fake Names, Emails & Addresses',
+      description:
+        'Generate up to 500 rows of synthetic but realistic-looking user data. Names, emails, phone numbers, addresses, IPs. Export as JSON or CSV.',
+    },
+    content: {
+      about:
+        'Produces realistic-but-synthetic user records for seeding databases, demoing UI, or load-testing list views. All values are randomly composed — no real people, no real card numbers.',
+      useCases: [
+        'Seeding a fresh staging database with a few hundred users.',
+        'Filling a Storybook table with believable rows.',
+        'Generating a CSV to import into a spreadsheet for layout testing.',
+      ],
+    },
+  },
+  {
+    slug: 'csp-generator',
+    name: 'CSP Header Generator',
+    description: 'Build a Content Security Policy header directive by directive.',
+    category: 'generate',
+    keywords: ['csp', 'content-security-policy', 'header', 'xss', 'security'],
+    Component: lazy(() => import('../tools/csp-generator')),
+    seo: {
+      title: 'Content Security Policy (CSP) Header Generator — Online',
+      description:
+        'Build a CSP header visually. Each directive explained in plain English. Toggle Report-Only and add a report-uri. Outputs a copy-ready header.',
+    },
+    content: {
+      about:
+        'Lays out the most common CSP directives with one-line explanations and lets you fill in the allowed source list. Outputs a complete `Content-Security-Policy` (or Report-Only) header you can drop into your server config.',
+      useCases: [
+        'Bootstrapping a CSP for a new app, starting from a tight default.',
+        'Documenting an existing policy in a way reviewers can actually read.',
+        'Building a Report-Only policy to deploy first, watch for violations, then enforce.',
+      ],
+      gotchas: [
+        'Avoid `\'unsafe-inline\'` and `\'unsafe-eval\'` in production — they undo most of the CSP value.',
+        'Some third-party scripts (analytics, embeds) require specific source allow-lists; check their docs.',
+      ],
+    },
+  },
+  {
+    slug: 'nginx-generator',
+    name: 'Nginx Config Generator',
+    description: 'Generate a production-ready Nginx server block for static or proxy use.',
+    category: 'generate',
+    keywords: ['nginx', 'config', 'reverse-proxy', 'ssl', 'letsencrypt', 'http2'],
+    Component: lazy(() => import('../tools/nginx-generator')),
+    seo: {
+      title: 'Nginx Config Generator — Reverse Proxy, SSL, HTTP/2 Online',
+      description:
+        'Answer a few questions and get a production-ready Nginx server block: SSL, HTTP/2, HSTS, gzip, security headers, optional rate limiting and HTTP→HTTPS redirect.',
+    },
+    content: {
+      about:
+        'Produces a sensible-default Nginx config for either a static SPA root or a reverse-proxied upstream. Includes SSL with Let\'s Encrypt paths, HTTP/2, security headers, gzip, optional rate limiting on `/api/`, and a HTTP→HTTPS redirect server block.',
+      useCases: [
+        'Spinning up a new VPS deployment without re-googling all the directives.',
+        'Generating a starting point that already has the headers a security audit will expect.',
+        'Comparing your existing config against a known-good baseline.',
+      ],
+      gotchas: [
+        'The Let\'s Encrypt cert paths assume Certbot defaults — adjust if you use a different ACME client.',
+        'Rate limiting is per-IP. Behind a CDN you\'ll want `set_real_ip_from` first.',
+      ],
+    },
+  },
+  {
+    slug: 'dockerfile-linter',
+    name: 'Dockerfile Linter',
+    description: 'Spot anti-patterns in a Dockerfile without leaving the browser.',
+    category: 'inspect',
+    keywords: ['dockerfile', 'docker', 'lint', 'hadolint', 'best-practice'],
+    Component: lazy(() => import('../tools/dockerfile-linter')),
+    seo: {
+      title: 'Dockerfile Linter Online — Spot Anti-patterns Instantly',
+      description:
+        'Paste a Dockerfile, get a list of issues with line numbers and rule IDs (Hadolint-style). Catches `latest` tags, missing USER, root containers, sudo usage and more.',
+    },
+    content: {
+      about:
+        'Scans a pasted Dockerfile against a curated set of common anti-patterns from the Hadolint catalog. Each issue shows a line number, severity, and rule ID so you can look up the rationale.',
+      useCases: [
+        'Pre-checking a Dockerfile before opening a PR.',
+        'Teaching a teammate why their `RUN apt-get install` is broken.',
+        'Quick audit of a Dockerfile pulled from a tutorial.',
+      ],
+      gotchas: [
+        'This is a fast in-browser subset of Hadolint. For full coverage and CI gating, run Hadolint properly.',
+      ],
+    },
+  },
+  {
+    slug: 'email-header-analyzer',
+    name: 'Email Header Analyzer',
+    description: 'Trace an email\'s routing path and check SPF / DKIM / DMARC.',
+    category: 'inspect',
+    keywords: ['email', 'header', 'spf', 'dkim', 'dmarc', 'spam', 'phishing'],
+    Component: lazy(() => import('../tools/email-header-analyzer')),
+    seo: {
+      title: 'Email Header Analyzer — SPF, DKIM, DMARC Online',
+      description:
+        'Paste raw email headers; see the SPF, DKIM, and DMARC verdicts, full Received hop chain, and key headers. Detect spoofing and trace where a message came from.',
+    },
+    content: {
+      about:
+        'Parses raw email headers (the kind you get from Gmail\'s "Show original") and surfaces the three things that matter most: authentication results (SPF/DKIM/DMARC), the routing path, and the standard envelope fields.',
+      useCases: [
+        'Investigating whether a suspicious email is real or phished.',
+        'Debugging why your transactional mail is failing DMARC at one provider.',
+        'Tracing how long a message sat at each hop on its way to the inbox.',
+      ],
+      gotchas: [
+        'Authentication-Results comes from the receiving server\'s POV. A "pass" here only means the receiver checked and was satisfied.',
+      ],
+    },
+  },
+  {
+    slug: 'ssh-keygen',
+    name: 'SSH Key Generator',
+    description: 'Generate an RSA SSH key pair entirely in your browser.',
+    category: 'generate',
+    keywords: ['ssh', 'keygen', 'rsa', 'pem', 'authorized_keys', 'pkcs8'],
+    Component: lazy(() => import('../tools/ssh-keygen')),
+    seo: {
+      title: 'SSH Key Generator Online — RSA, 100% Client-Side',
+      description:
+        'Generate an RSA-2048/3072/4096 SSH key pair using the browser\'s WebCrypto. Outputs a PKCS#8 PEM private key and an OpenSSH-format public key. Nothing uploaded.',
+    },
+    content: {
+      about:
+        'Uses WebCrypto\'s `crypto.subtle.generateKey` to produce an RSA pair, then exports the private key as PKCS#8 PEM and the public key in the standard OpenSSH `ssh-rsa <base64> <comment>` form. Both are downloadable.',
+      useCases: [
+        'Bootstrapping a deploy key for a CI runner where you don\'t want to ssh-keygen from your machine.',
+        'Generating a one-off key for a short-lived test environment.',
+        'Replacing a compromised key without leaving the browser.',
+      ],
+      gotchas: [
+        'Modern setups should prefer Ed25519 — but most browsers do not yet expose Ed25519 export. RSA-4096 remains widely accepted.',
+        'PKCS#8 PEM is what `ssh -i` accepts. If a tool insists on legacy OpenSSH format, run `ssh-keygen -p -m PEM -f keyfile`.',
+      ],
+    },
+  },
+  {
+    slug: 'api-tester',
+    name: 'API Request Tester',
+    description: 'Send REST requests with custom headers and a body, all in browser.',
+    category: 'network',
+    keywords: ['api', 'rest', 'http', 'postman', 'curl', 'request', 'fetch'],
+    Component: lazy(() => import('../tools/api-tester')),
+    seo: {
+      title: 'API Request Tester Online — REST, Postman Alternative in Browser',
+      description:
+        'Send GET, POST, PUT, PATCH, DELETE requests from your browser with custom headers and a body. Inspect status, headers, and pretty-printed JSON response.',
+    },
+    content: {
+      about:
+        'A lightweight in-browser REST client. Pick a method, add headers, optionally send a body, and inspect the parsed response with timing.',
+      useCases: [
+        'Smoke-testing an internal API without spinning up Postman.',
+        'Sharing a request URL plus headers with a teammate via a single screenshot.',
+        'Quickly checking what your API returns for a given Authorization header.',
+      ],
+      gotchas: [
+        'Browser CORS will block requests to APIs that do not return permissive `Access-Control-Allow-Origin` headers — there is no way around this from a webpage. The Linux desktop build of debugdaily skips this restriction.',
+        'Sensitive bearer tokens are visible to any extension installed in your browser. For high-stakes secrets, use the desktop app or curl.',
+      ],
+    },
+  },
+  {
+    slug: 'ip-lookup',
+    name: 'IP Lookup',
+    description: 'Geolocate any IP plus ISP, ASN, VPN/proxy detection.',
+    category: 'network',
+    keywords: ['ip', 'geolocation', 'isp', 'asn', 'vpn', 'proxy'],
+    Component: lazy(() => import('../tools/ip-lookup')),
+    seo: {
+      title: 'IP Lookup — Geolocation, ISP, ASN, VPN Detection Online',
+      description:
+        'Look up any public IPv4/IPv6 address. See country, city, ISP, ASN, reverse DNS, and whether the address belongs to a VPN, proxy, or hosting provider.',
+    },
+    content: {
+      about:
+        'Server-side lookup against ip-api.com. Detects your own IP if no input is provided, or queries any public IP. Returns location, ISP/org, ASN, reverse DNS, and proxy/VPN/hosting flags.',
+      useCases: [
+        'Confirming where a suspicious connection is coming from in your access logs.',
+        'Verifying that your VPN is masking your real ISP.',
+        'Checking the ASN of a target IP before allow-listing it in a firewall.',
+      ],
+      gotchas: [
+        'Free-tier geolocation is approximate — city is rarely better than ±50 km.',
+        'VPN/proxy detection lags reality. Newly-rotated VPN exits may not be flagged yet.',
+      ],
+    },
+  },
+  {
+    slug: 'whois',
+    name: 'WHOIS Lookup',
+    description: 'Domain registration, expiry, registrar and nameservers via RDAP.',
+    category: 'network',
+    keywords: ['whois', 'rdap', 'domain', 'registrar', 'expiry', 'nameservers'],
+    Component: lazy(() => import('../tools/whois')),
+    seo: {
+      title: 'WHOIS Lookup Online — Domain Registration, Expiry, Nameservers',
+      description:
+        'Look up any domain via RDAP (modern WHOIS): registrar, registrant, registration date, last updated, expiry, status, and nameservers. Color-coded expiry.',
+    },
+    content: {
+      about:
+        'Queries the public RDAP system (rdap.org) for any registered domain. RDAP is the modern, JSON-based replacement for legacy WHOIS — same data, structured output, no rate-limiting weirdness.',
+      useCases: [
+        'Catching a domain that\'s about to expire so you can renew it.',
+        'Confirming who registered a suspicious lookalike domain.',
+        'Auditing the nameservers a domain currently points at.',
+      ],
+      gotchas: [
+        'ccTLDs (e.g. .uk, .br, .jp) often return less data than gTLDs by design — privacy regulations vary.',
+        'Recently-transferred domains may show stale registrar info for up to 24 hours.',
+      ],
+    },
+  },
+  {
+    slug: 'http-headers',
+    name: 'HTTP Headers Inspector',
+    description: 'See response headers + a security score for any URL.',
+    category: 'network',
+    keywords: ['http', 'headers', 'security', 'csp', 'hsts', 'cors'],
+    Component: lazy(() => import('../tools/http-headers')),
+    seo: {
+      title: 'HTTP Headers Inspector & Security Score Online',
+      description:
+        'Fetch any URL server-side and inspect every response header, plus a security score covering HSTS, CSP, X-Frame-Options, Content-Type-Options, Referrer-Policy and Permissions-Policy.',
+    },
+    content: {
+      about:
+        'Server-side fetch (no CORS limits) followed by analysis of the six security headers that actually matter. Each check explains why it matters and shows the actual returned value.',
+      useCases: [
+        'Auditing a new deployment\'s security posture before announcing it.',
+        'Comparing two environments to confirm the same headers are set.',
+        'Generating a "what we\'re missing" list before an audit.',
+      ],
+      gotchas: [
+        'A weak score isn\'t always actionable — some headers (CSP) take real engineering to enable safely.',
+        'Server-side fetch follows redirects; the final URL is what\'s actually inspected.',
+      ],
+    },
+  },
+  {
+    slug: 'uptime-checker',
+    name: 'Uptime Checker',
+    description: 'Is the site up? Status, redirect chain, and round-trip time.',
+    category: 'network',
+    keywords: ['uptime', 'down', 'status', 'redirect', 'health', 'monitor'],
+    Component: lazy(() => import('../tools/uptime-checker')),
+    seo: {
+      title: 'Website Uptime Checker — Is It Down for Everyone? Online',
+      description:
+        'Check if a URL is reachable, see its status code, the full redirect chain, and total response time. Up to 5 redirects followed before giving up.',
+    },
+    content: {
+      about:
+        'Server-side GET with manual redirect following. Reports each hop, the final status, and total time end-to-end. Good for "is it down for me, or down for everyone?"',
+      useCases: [
+        'Confirming a CDN issue isn\'t local before paging on-call.',
+        'Auditing a redirect chain for unnecessary hops that hurt SEO.',
+        'Spot-checking a deploy after pushing.',
+      ],
+      gotchas: [
+        'Single-region check — for true "down for everyone" answers use a multi-region monitor.',
+        'Some sites return 200 to bots but not to real users — this tool sends a generic User-Agent.',
+      ],
+    },
+  },
+  {
+    slug: 'meta-preview',
+    name: 'Meta Tag & OG Preview',
+    description: 'Preview how a URL renders on Google, Twitter, Facebook & LinkedIn.',
+    category: 'inspect',
+    keywords: ['meta', 'og', 'opengraph', 'twitter', 'preview', 'seo'],
+    Component: lazy(() => import('../tools/meta-preview')),
+    seo: {
+      title: 'Meta Tag & Open Graph Preview — Google, Twitter, Facebook Online',
+      description:
+        'Paste any URL; we fetch it server-side, parse meta + Open Graph + Twitter card tags, and render lookalike previews for Google, Twitter, Facebook and LinkedIn.',
+    },
+    content: {
+      about:
+        'Fetches the HTML from the URL, parses standard meta tags plus Open Graph and Twitter Card tags, and renders three preview cards that approximate what each platform will show.',
+      useCases: [
+        'Verifying a redesigned blog post will look right when shared.',
+        'Catching missing or oversized og:image before launch.',
+        'Auditing a landing page for SEO basics (title length, description, canonical).',
+      ],
+      gotchas: [
+        'Real social previews can lag — platforms cache. Use each platform\'s official debugger to force a re-scrape.',
+        'Sites that gate content behind JavaScript may not expose meta tags to a server-side fetch.',
+      ],
+    },
+  },
+  {
+    slug: 'ping-test',
+    name: 'Ping Test',
+    description: 'TCP-connect timing to any host:port from our server.',
+    category: 'network',
+    keywords: ['ping', 'latency', 'tcp', 'connect', 'rtt'],
+    Component: lazy(() => import('../tools/ping-test')),
+    seo: {
+      title: 'Ping Test — TCP Connect Latency to Any Host Online',
+      description:
+        'Measure round-trip time and packet loss to any host:port via TCP connect. Configurable sample count. Returns min/avg/max plus per-probe results.',
+    },
+    content: {
+      about:
+        'Issues a sequence of TCP connects to the chosen host:port and records the time-to-connect for each. Reports min, avg, max, and loss percentage.',
+      useCases: [
+        'Comparing latency to two candidate API endpoints from the same region.',
+        'Spotting intermittent packet loss to a service.',
+        'Confirming a port is open and reachable from the public internet.',
+      ],
+      gotchas: [
+        'TCP connect is not ICMP. Times include the SYN/SYN-ACK round trip plus any rate-limiting at the server.',
+        'Single-region — multi-region latency probes need a paid monitoring service.',
+      ],
+    },
+  },
+  {
+    slug: 'ip-blacklist',
+    name: 'IP Blacklist Checker',
+    description: 'Check an IP against 12 DNS-based blocklists used by mail providers.',
+    category: 'network',
+    keywords: ['blacklist', 'dnsbl', 'spamhaus', 'reputation', 'email', 'spam'],
+    Component: lazy(() => import('../tools/ip-blacklist')),
+    seo: {
+      title: 'IP Blacklist Checker — DNSBL Reputation Online',
+      description:
+        'Look up an IPv4 address across 12 DNSBLs including Spamhaus, Barracuda, SpamCop, SORBS, and CBL. Per-list results with the actual response code returned.',
+    },
+    content: {
+      about:
+        'Performs the standard DNSBL query (reverse-octet + zone) for each list and reports which ones return a hit. Hit responses include the address-class TXT response from the list, useful for triage.',
+      useCases: [
+        'Investigating bounced email — being on a major DNSBL is the usual culprit.',
+        'Auditing a new VPS IP before sending production mail.',
+        'Verifying delisting requests took effect.',
+      ],
+      gotchas: [
+        'A clean DNSBL run does not mean clean reputation — Gmail and Microsoft use proprietary signals on top.',
+        'Listings on small/abandoned DNSBLs are usually noise. Spamhaus, Barracuda, and SpamCop are the ones receivers care about.',
+      ],
+    },
+  },
+  {
+    slug: 'responsive-tester',
+    name: 'Responsive Design Tester',
+    description: 'Open any URL across mobile, tablet, and desktop sizes side-by-side.',
+    category: 'inspect',
+    keywords: ['responsive', 'mobile', 'tablet', 'breakpoint', 'iphone', 'ipad', 'preview'],
+    Component: lazy(() => import('../tools/responsive-tester')),
+    seo: {
+      title: 'Responsive Design Tester — All Devices Side-by-Side Online',
+      description:
+        'Render any URL across 10 device sizes — iPhone, Pixel, Galaxy, iPad, and three desktop widths — at the same time. No browser extensions, no install.',
+    },
+    content: {
+      about:
+        'Loads the URL inside ten sandboxed iframes, each set to a real device\'s viewport size and rendered at a comfortable scale. See your responsive breakpoints all at once.',
+      useCases: [
+        'Spot-checking a CSS change across mobile, tablet, and desktop without resizing the browser.',
+        'Demoing a layout to stakeholders without sending screenshots.',
+        'Sanity-checking that a third-party widget renders on small screens.',
+      ],
+      gotchas: [
+        'Sites that send `X-Frame-Options: DENY` or a strict frame-ancestors CSP refuse to load in iframes — that\'s the browser, not us.',
+        'Iframes don\'t emulate touch or device pixel ratio. Use Chromium DevTools\' device toolbar for true emulation.',
+      ],
+    },
+  },
 ];
 
 export const toolBySlug: Record<string, Tool> = Object.fromEntries(

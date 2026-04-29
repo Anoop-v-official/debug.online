@@ -27,6 +27,15 @@ export default defineConfig({
             if (id.includes('framer-motion')) return 'motion';
             if (id.includes('react-router')) return 'router';
             if (id.includes('zustand')) return 'store';
+            if (id.includes('lucide-react')) return 'icons';
+            // Heavy tool-specific libs: let them split with the dynamic tool import.
+            if (
+              id.includes('bcryptjs') ||
+              id.includes('sql-formatter') ||
+              id.includes('js-yaml')
+            ) {
+              return undefined;
+            }
             return 'vendor';
           }
           if (id.includes('/src/tools/')) {

@@ -24,7 +24,9 @@ export function Layout({
       <footer className="border-t border-border mt-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs text-subtle">
           <span className="font-mono">
-            © {new Date().getFullYear()} debug.online
+            © {new Date().getFullYear()}{' '}
+            <span className="text-text">debug</span>
+            <span className="text-accent">{'<daily>'}</span>
           </span>
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link to="/about" className="hover:text-text">
