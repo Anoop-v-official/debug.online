@@ -9,105 +9,80 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   BookmarkPlus,
-  Check,
   Command,
-  Copy,
   Flame,
   Search,
   Sparkles,
   Star,
-  X,
 } from 'lucide-react';
 import { useSeo } from '../lib/seo';
 import { toolBySlug } from '../lib/tools';
 import { useFavoritesStore } from '../store/favorites';
 
-type Category =
-  | 'all'
-  | 'backend'
-  | 'frontend'
-  | 'devops'
-  | 'sysadmin'
-  | 'security'
-  | 'trending'
-  | 'favorites';
+type RoleCategory = 'backend' | 'frontend' | 'devops' | 'sysadmin' | 'security';
+type Filter = 'all' | 'trending' | 'new' | 'favorites';
 
 interface MarketingTool {
   id: string;
   name: string;
   description: string;
-  category: Exclude<Category, 'all' | 'trending' | 'favorites'>;
+  category: RoleCategory;
   icon: string;
   badge: string;
   searchVolume: string;
   searchVolumeNum: number;
   tags: string[];
-  /** Slug in our existing tool registry, if implemented. */
   existingSlug?: string;
-  /** Numeric badge state for filter logic. */
   isNew?: boolean;
 }
 
 const ROLE_META: Record<
-  Exclude<Category, 'all' | 'trending' | 'favorites'>,
-  { label: string; color: string; ring: string; bg: string; border: string; dot: string; emoji: string }
+  RoleCategory,
+  { label: string; color: string; bg: string; dot: string; emoji: string }
 > = {
   backend: {
-    label: 'Backend Dev',
+    label: 'Backend',
     color: 'text-role-backend',
-    ring: 'ring-role-backend/40',
     bg: 'bg-role-backend/10',
-    border: 'border-role-backend',
     dot: 'bg-role-backend',
     emoji: '🔵',
   },
   frontend: {
-    label: 'Frontend Dev',
+    label: 'Frontend',
     color: 'text-role-frontend',
-    ring: 'ring-role-frontend/40',
     bg: 'bg-role-frontend/10',
-    border: 'border-role-frontend',
     dot: 'bg-role-frontend',
     emoji: '🟡',
   },
   devops: {
-    label: 'DevOps / SRE',
+    label: 'DevOps & SRE',
     color: 'text-role-devops',
-    ring: 'ring-role-devops/40',
     bg: 'bg-role-devops/10',
-    border: 'border-role-devops',
     dot: 'bg-role-devops',
     emoji: '🔴',
   },
   sysadmin: {
     label: 'SysAdmin',
     color: 'text-role-sysadmin',
-    ring: 'ring-role-sysadmin/40',
     bg: 'bg-role-sysadmin/10',
-    border: 'border-role-sysadmin',
     dot: 'bg-role-sysadmin',
     emoji: '🟢',
   },
   security: {
     label: 'Security',
     color: 'text-role-security',
-    ring: 'ring-role-security/40',
     bg: 'bg-role-security/10',
-    border: 'border-role-security',
     dot: 'bg-role-security',
     emoji: '🟣',
   },
 };
 
-const TABS: { id: Category; label: string; icon: string; tone: string }[] = [
-  { id: 'all', label: 'All Tools', icon: '◇', tone: 'text-text' },
-  { id: 'backend', label: 'Backend', icon: '🔵', tone: 'text-role-backend' },
-  { id: 'frontend', label: 'Frontend', icon: '🟡', tone: 'text-role-frontend' },
-  { id: 'devops', label: 'DevOps / SRE', icon: '🔴', tone: 'text-role-devops' },
-  { id: 'sysadmin', label: 'SysAdmin', icon: '🟢', tone: 'text-role-sysadmin' },
-  { id: 'security', label: 'Security', icon: '🟣', tone: 'text-role-security' },
-  { id: 'trending', label: 'Most Searched', icon: '⚡', tone: 'text-role-trending' },
-  { id: 'favorites', label: 'Favorites', icon: '★', tone: 'text-accent' },
+const CATEGORY_ORDER: RoleCategory[] = [
+  'backend',
+  'frontend',
+  'devops',
+  'sysadmin',
+  'security',
 ];
 
 const TOOLS: MarketingTool[] = [
@@ -115,8 +90,7 @@ const TOOLS: MarketingTool[] = [
   {
     id: 'json-formatter',
     name: 'JSON Formatter & Validator',
-    description:
-      'Format, validate, minify and compare JSON instantly. Better than jsonlint — supports 5MB+ files.',
+    description: 'Format, validate, minify and compare JSON instantly.',
     category: 'backend',
     icon: '{ }',
     badge: '🔥 Most Searched',
@@ -127,9 +101,8 @@ const TOOLS: MarketingTool[] = [
   },
   {
     id: 'jwt-decoder',
-    name: 'JWT Decoder & Inspector',
-    description:
-      'Decode JWT tokens instantly. See header, payload, expiry countdown. No data sent to server.',
+    name: 'JWT Decoder',
+    description: 'Decode JWT tokens. See header, payload, expiry countdown.',
     category: 'backend',
     icon: '🔑',
     badge: '🔥 Most Searched',
@@ -141,35 +114,32 @@ const TOOLS: MarketingTool[] = [
   {
     id: 'api-tester',
     name: 'API Request Tester',
-    description:
-      'Test REST APIs directly in browser. GET/POST/PUT/DELETE, custom headers, body editor. Postman alternative, no install needed.',
+    description: 'GET/POST/PUT/DELETE in browser. Postman alternative.',
     category: 'backend',
     icon: '⚡',
     badge: '✨ New',
     searchVolume: '540K/mo',
     searchVolumeNum: 540_000,
-    tags: ['api', 'rest', 'postman', 'http', 'request', 'test'],
+    tags: ['api', 'rest', 'postman', 'http', 'request'],
     isNew: true,
     existingSlug: 'api-tester',
   },
   {
     id: 'cron-builder',
-    name: 'Cron Expression Builder',
-    description:
-      'Build cron expressions visually. Plain English explanation + next 10 run times. Supports AWS, Unix, Quartz formats.',
+    name: 'Cron Expression Explainer',
+    description: 'Translate cron expressions to plain English.',
     category: 'backend',
     icon: '⏰',
     badge: '🔥 Most Searched',
     searchVolume: '720K/mo',
     searchVolumeNum: 720_000,
-    tags: ['cron', 'schedule', 'expression', 'unix', 'aws'],
+    tags: ['cron', 'schedule', 'expression', 'unix'],
     existingSlug: 'cron-parser',
   },
   {
     id: 'regex-tester',
-    name: 'Regex Tester & Explainer',
-    description:
-      'Live regex matching with color highlights. AI-powered explanation of what each part does. Supports JS, Python, Go flavors.',
+    name: 'Regex Tester',
+    description: 'Live regex matching with capture groups and offsets.',
     category: 'backend',
     icon: '.*',
     badge: '🔥 Most Searched',
@@ -180,9 +150,8 @@ const TOOLS: MarketingTool[] = [
   },
   {
     id: 'sql-formatter',
-    name: 'SQL Formatter & Beautifier',
-    description:
-      'Paste messy SQL, get clean formatted output. Supports MySQL, PostgreSQL, MSSQL. Minify mode included.',
+    name: 'SQL Formatter',
+    description: 'Format messy SQL across MySQL, Postgres, MSSQL and more.',
     category: 'backend',
     icon: '🗃️',
     badge: '',
@@ -194,73 +163,67 @@ const TOOLS: MarketingTool[] = [
   {
     id: 'base64',
     name: 'Base64 Encoder / Decoder',
-    description:
-      'Encode or decode Base64 instantly. Supports text, URLs, and file uploads. URL-safe variant included.',
+    description: 'Encode or decode Base64, UTF-8 safe.',
     category: 'backend',
     icon: '64',
     badge: '🔥 Most Searched',
     searchVolume: '1.8M/mo',
     searchVolumeNum: 1_800_000,
-    tags: ['base64', 'encode', 'decode', 'binary', 'string'],
+    tags: ['base64', 'encode', 'decode', 'binary'],
     existingSlug: 'base64',
   },
   {
     id: 'unix-timestamp',
     name: 'Unix Timestamp Converter',
-    description:
-      'Convert Unix timestamps to human dates and back. Millisecond support. Timezone aware. One-click current timestamp.',
+    description: 'Unix epoch ↔ human dates, timezone-aware.',
     category: 'backend',
     icon: '📅',
     badge: '🔥 Most Searched',
     searchVolume: '950K/mo',
     searchVolumeNum: 950_000,
-    tags: ['unix', 'timestamp', 'epoch', 'date', 'convert', 'time'],
+    tags: ['unix', 'timestamp', 'epoch', 'date', 'time'],
     existingSlug: 'timestamp-converter',
   },
   {
     id: 'uuid-generator',
-    name: 'UUID / ULID Generator',
-    description:
-      'Generate UUIDs v1/v4/v7 and ULIDs in bulk. Copy all with one click. Validate existing UUIDs.',
+    name: 'UUID Generator',
+    description: 'Generate v4 UUIDs in bulk, copy all in one click.',
     category: 'backend',
     icon: '🆔',
     badge: '',
     searchVolume: '380K/mo',
     searchVolumeNum: 380_000,
-    tags: ['uuid', 'ulid', 'guid', 'generate', 'unique', 'id'],
+    tags: ['uuid', 'guid', 'random', 'unique'],
     existingSlug: 'uuid-generator',
   },
   {
     id: 'hash-generator',
     name: 'Hash Generator',
-    description:
-      'Generate MD5, SHA-1, SHA-256, SHA-512 hashes from text or files. Compare two hashes instantly.',
+    description: 'SHA-1, SHA-256, SHA-384, SHA-512 of any text.',
     category: 'backend',
     icon: '#',
     badge: '',
     searchVolume: '290K/mo',
     searchVolumeNum: 290_000,
-    tags: ['hash', 'md5', 'sha256', 'sha512', 'checksum', 'crypto'],
+    tags: ['hash', 'sha', 'sha256', 'crypto'],
     existingSlug: 'hash-generator',
   },
   {
     id: 'http-status',
-    name: 'HTTP Status Code Reference',
-    description:
-      'Every HTTP status code explained with use cases, what causes it, and how to fix it. Searchable + filterable.',
+    name: 'HTTP Status Codes',
+    description: 'Every HTTP status code, searchable, in plain English.',
     category: 'backend',
     icon: '200',
     badge: '🔥 Most Searched',
     searchVolume: '670K/mo',
     searchVolumeNum: 670_000,
-    tags: ['http', 'status', '404', '500', '200', 'error', 'code'],
+    tags: ['http', 'status', '404', '500', 'error'],
     existingSlug: 'http-status',
   },
   {
     id: 'bcrypt-tester',
     name: 'Bcrypt Hash Tester',
-    description:
-      'Test and generate bcrypt password hashes in browser. Choose work factor. Verify existing hashes. 100% client-side.',
+    description: 'Generate or verify bcrypt password hashes.',
     category: 'backend',
     icon: '🔒',
     badge: '',
@@ -274,308 +237,285 @@ const TOOLS: MarketingTool[] = [
   {
     id: 'css-unit-converter',
     name: 'CSS Unit Converter',
-    description:
-      'px → rem → em → vh → vw → % and back. Set your base font size. Live preview. Most accurate converter online.',
+    description: 'px ↔ rem ↔ em ↔ vh ↔ vw ↔ %. Configurable base.',
     category: 'frontend',
     icon: 'px',
     badge: '🔥 Most Searched',
     searchVolume: '520K/mo',
     searchVolumeNum: 520_000,
-    tags: ['css', 'px', 'rem', 'em', 'unit', 'convert'],
+    tags: ['css', 'px', 'rem', 'em', 'unit'],
     existingSlug: 'css-unit-converter',
   },
   {
     id: 'color-converter',
-    name: 'Color Converter & Picker',
-    description:
-      'HEX ↔ RGB ↔ HSL ↔ OKLCH ↔ Tailwind name. Color picker included. CSS variable output. Copy in any format.',
+    name: 'Color Converter',
+    description: 'HEX ↔ RGB ↔ HSL with live swatch.',
     category: 'frontend',
     icon: '🎨',
     badge: '🔥 Most Searched',
     searchVolume: '780K/mo',
     searchVolumeNum: 780_000,
-    tags: ['color', 'hex', 'rgb', 'hsl', 'picker', 'css', 'tailwind'],
+    tags: ['color', 'hex', 'rgb', 'hsl', 'css'],
     existingSlug: 'color-converter',
   },
   {
     id: 'gradient-generator',
     name: 'CSS Gradient Generator',
-    description:
-      'Visual gradient builder with linear, radial, conic. Copy CSS instantly. 50+ presets. Mesh gradient support.',
+    description: 'Linear, radial, conic gradients with live preview.',
     category: 'frontend',
     icon: '🌈',
     badge: '',
     searchVolume: '340K/mo',
     searchVolumeNum: 340_000,
-    tags: ['gradient', 'css', 'linear', 'radial', 'background'],
+    tags: ['gradient', 'css', 'background'],
     existingSlug: 'gradient-generator',
   },
   {
     id: 'shadow-generator',
-    name: 'Box & Text Shadow Generator',
-    description:
-      'Visual shadow builder with multi-layer support. Live preview. One-click copy CSS. Tailwind class output.',
+    name: 'Box & Text Shadow',
+    description: 'Multi-layer box-shadow and text-shadow generator.',
     category: 'frontend',
     icon: '🔳',
     badge: '',
     searchVolume: '220K/mo',
     searchVolumeNum: 220_000,
-    tags: ['shadow', 'box-shadow', 'css', 'tailwind', 'ui'],
+    tags: ['shadow', 'box-shadow', 'css'],
     existingSlug: 'shadow-generator',
   },
   {
     id: 'meta-preview',
     name: 'Meta Tag & OG Preview',
-    description:
-      'See exactly how your URL looks on Google, Twitter, LinkedIn, and WhatsApp. Paste URL or edit tags manually. Fix your SEO previews.',
+    description: 'Preview Google, Twitter, Facebook & LinkedIn cards.',
     category: 'frontend',
     icon: '🔗',
     badge: '✨ New',
     searchVolume: '190K/mo',
     searchVolumeNum: 190_000,
-    tags: ['meta', 'og', 'seo', 'opengraph', 'twitter', 'preview'],
+    tags: ['meta', 'og', 'seo', 'opengraph', 'preview'],
     isNew: true,
     existingSlug: 'meta-preview',
   },
   {
     id: 'contrast-checker',
-    name: 'Color Contrast Checker',
-    description:
-      'WCAG 2.1 AA/AAA compliance checker. Visual pass/fail. Suggests accessible alternatives. Bulk check mode.',
+    name: 'Contrast Checker',
+    description: 'WCAG 2.1 AA/AAA contrast ratio checker.',
     category: 'frontend',
     icon: '♿',
     badge: '',
     searchVolume: '160K/mo',
     searchVolumeNum: 160_000,
-    tags: ['contrast', 'wcag', 'accessibility', 'a11y', 'color'],
+    tags: ['contrast', 'wcag', 'accessibility', 'a11y'],
     existingSlug: 'contrast-checker',
   },
   {
     id: 'svg-optimizer',
-    name: 'SVG Optimizer & Editor',
-    description:
-      'Paste SVG code, reduce file size up to 80%. Preview before/after. Remove hidden elements. SVGO-powered.',
+    name: 'SVG Optimizer',
+    description: 'Strip metadata, comments and editor cruft from SVG.',
     category: 'frontend',
     icon: '⭐',
     badge: '',
     searchVolume: '140K/mo',
     searchVolumeNum: 140_000,
-    tags: ['svg', 'optimize', 'minify', 'compress', 'vector'],
+    tags: ['svg', 'optimize', 'minify', 'compress'],
     existingSlug: 'svg-optimizer',
   },
   {
     id: 'responsive-tester',
     name: 'Responsive Design Tester',
-    description:
-      'Test any URL across 20+ device sizes simultaneously. iPhone, iPad, Android, desktop. No extensions needed.',
+    description: 'Test any URL across 10 device sizes side-by-side.',
     category: 'frontend',
     icon: '📱',
     badge: '🔥 Most Searched',
     searchVolume: '410K/mo',
     searchVolumeNum: 410_000,
-    tags: ['responsive', 'mobile', 'test', 'device', 'breakpoint'],
+    tags: ['responsive', 'mobile', 'device', 'breakpoint'],
     existingSlug: 'responsive-tester',
   },
   {
     id: 'image-to-base64',
-    name: 'Image to Base64 Converter',
-    description:
-      'Upload any image, get Base64 data URL instantly. Use directly in CSS/HTML. Supports PNG, JPG, SVG, WebP.',
+    name: 'Image to Base64',
+    description: 'Drop an image, get a Base64 data URL ready for HTML/CSS.',
     category: 'frontend',
     icon: '🖼️',
     badge: '',
     searchVolume: '280K/mo',
     searchVolumeNum: 280_000,
-    tags: ['image', 'base64', 'data-url', 'embed', 'css'],
+    tags: ['image', 'base64', 'data-url', 'embed'],
     existingSlug: 'image-to-base64',
   },
 
   // DevOps
   {
     id: 'yaml-validator',
-    name: 'YAML Validator & Formatter',
-    description:
-      'Paste YAML, get instant error detection with line numbers. Convert YAML ↔ JSON. K8s manifest aware.',
+    name: 'YAML Validator',
+    description: 'Validate YAML; round-trip to JSON. K8s manifest ready.',
     category: 'devops',
     icon: '📋',
     badge: '🔥 Most Searched',
     searchVolume: '380K/mo',
     searchVolumeNum: 380_000,
-    tags: ['yaml', 'validate', 'format', 'kubernetes', 'docker', 'k8s'],
+    tags: ['yaml', 'validate', 'kubernetes', 'k8s'],
     existingSlug: 'yaml-validator',
   },
   {
     id: 'dockerfile-linter',
     name: 'Dockerfile Linter',
-    description:
-      'Paste your Dockerfile, get issues, anti-patterns, and best practice fixes. Layer size analysis. Nothing like this exists online.',
+    description: 'Spot anti-patterns in your Dockerfile, Hadolint-style.',
     category: 'devops',
     icon: '🐳',
     badge: '✨ New',
     searchVolume: '210K/mo',
     searchVolumeNum: 210_000,
-    tags: ['dockerfile', 'docker', 'lint', 'build', 'image', 'layer'],
+    tags: ['dockerfile', 'docker', 'lint', 'image'],
     isNew: true,
     existingSlug: 'dockerfile-linter',
   },
   {
     id: 'ssl-checker',
     name: 'SSL Certificate Checker',
-    description:
-      'Enter any domain — see expiry date, issuer, certificate chain, SANs, and TLS version. Set email alerts before expiry.',
+    description: 'Inspect TLS cert: subject, issuer, expiry, SAN.',
     category: 'devops',
     icon: '🛡️',
     badge: '🔥 Most Searched',
     searchVolume: '560K/mo',
     searchVolumeNum: 560_000,
-    tags: ['ssl', 'tls', 'certificate', 'https', 'expiry', 'domain'],
+    tags: ['ssl', 'tls', 'certificate', 'https', 'expiry'],
     existingSlug: 'ssl-check',
   },
   {
     id: 'nginx-generator',
     name: 'Nginx Config Generator',
-    description:
-      'Answer a few questions, get production-ready Nginx config. Reverse proxy, SSL, caching, rate limiting. No more googling configs.',
+    description: 'Production-ready Nginx config from a few questions.',
     category: 'devops',
     icon: '⚙️',
     badge: '✨ New',
     searchVolume: '320K/mo',
     searchVolumeNum: 320_000,
-    tags: ['nginx', 'config', 'reverse-proxy', 'ssl', 'server'],
+    tags: ['nginx', 'config', 'reverse-proxy', 'ssl'],
     isNew: true,
     existingSlug: 'nginx-generator',
   },
   {
     id: 'cidr-calculator',
     name: 'CIDR / Subnet Calculator',
-    description:
-      'Enter any IP/CIDR, get full subnet breakdown — network address, broadcast, usable IPs, wildcard. AWS VPC friendly.',
+    description: 'Network, broadcast, mask, usable hosts for any CIDR.',
     category: 'devops',
     icon: '🌐',
     badge: '',
     searchVolume: '240K/mo',
     searchVolumeNum: 240_000,
-    tags: ['cidr', 'subnet', 'ip', 'network', 'vpc', 'aws', 'mask'],
+    tags: ['cidr', 'subnet', 'ip', 'network', 'vpc'],
     existingSlug: 'cidr-calculator',
   },
   {
     id: 'env-diff',
-    name: '.ENV File Diff & Validator',
-    description:
-      'Paste two .env files, instantly see missing keys, changed values, and extras. Never deploy with missing env vars again.',
+    name: '.ENV File Diff',
+    description: 'Compare two .env files: missing, changed, identical.',
     category: 'devops',
     icon: '🔄',
     badge: '✨ New',
     searchVolume: '95K/mo',
     searchVolumeNum: 95_000,
-    tags: ['env', 'environment', 'diff', 'compare', 'variables', 'dotenv'],
+    tags: ['env', 'environment', 'diff', 'dotenv'],
     isNew: true,
     existingSlug: 'env-diff',
   },
   {
     id: 'http-headers',
     name: 'HTTP Headers Inspector',
-    description:
-      'Enter any URL, see all response headers, security headers score, CORS config, and cache settings. Actionable fixes included.',
+    description: 'Response headers + a security score for any URL.',
     category: 'devops',
     icon: '🔍',
     badge: '',
     searchVolume: '175K/mo',
     searchVolumeNum: 175_000,
-    tags: ['headers', 'http', 'cors', 'security', 'cache', 'inspect'],
+    tags: ['headers', 'http', 'cors', 'security'],
     existingSlug: 'http-headers',
   },
 
   // SysAdmin
   {
     id: 'ip-lookup',
-    name: 'IP Lookup & Info',
-    description:
-      'Your public IP + ISP + location + IPv4/IPv6 + VPN detection + blacklist check + latency to major servers. The best IP tool online.',
+    name: 'IP Lookup',
+    description: 'Geolocation, ISP, ASN, VPN/proxy detection.',
     category: 'sysadmin',
     icon: '📡',
     badge: '🔥 #1 Most Searched',
     searchVolume: '3.6M/mo',
     searchVolumeNum: 3_600_000,
-    tags: ['ip', 'address', 'lookup', 'location', 'vpn', 'isp', 'blacklist'],
+    tags: ['ip', 'geolocation', 'isp', 'asn', 'vpn'],
     existingSlug: 'ip-lookup',
   },
   {
     id: 'dns-lookup',
-    name: 'DNS Lookup & Propagation',
-    description:
-      'Check A, MX, TXT, CNAME, NS records instantly. See propagation status across 20 global servers. Live world map view.',
+    name: 'DNS Lookup',
+    description: 'A, AAAA, MX, TXT, NS records via Cloudflare/Google.',
     category: 'sysadmin',
     icon: '🔎',
     badge: '🔥 Most Searched',
     searchVolume: '820K/mo',
     searchVolumeNum: 820_000,
-    tags: ['dns', 'lookup', 'propagation', 'mx', 'cname', 'nameserver'],
+    tags: ['dns', 'lookup', 'mx', 'cname', 'nameserver'],
     existingSlug: 'dns-lookup',
   },
   {
     id: 'whois',
     name: 'WHOIS Lookup',
-    description:
-      'Full domain registration info — registrar, creation date, expiry, nameservers. Bulk WHOIS for multiple domains.',
+    description: 'Domain registrar, creation, expiry, nameservers.',
     category: 'sysadmin',
     icon: '📂',
     badge: '🔥 Most Searched',
     searchVolume: '640K/mo',
     searchVolumeNum: 640_000,
-    tags: ['whois', 'domain', 'registrar', 'expiry', 'lookup'],
+    tags: ['whois', 'domain', 'registrar', 'expiry'],
     existingSlug: 'whois',
   },
   {
     id: 'ping-test',
-    name: 'Global Ping Test',
-    description:
-      'Test latency to any host from 10+ locations worldwide. See which region has the highest lag. Great for CDN debugging.',
+    name: 'Ping Test',
+    description: 'TCP-connect timing to any host:port from our server.',
     category: 'sysadmin',
     icon: '📶',
     badge: '',
     searchVolume: '390K/mo',
     searchVolumeNum: 390_000,
-    tags: ['ping', 'latency', 'speed', 'test', 'global', 'cdn'],
+    tags: ['ping', 'latency', 'tcp', 'rtt'],
     existingSlug: 'ping-test',
   },
   {
     id: 'password-generator',
     name: 'Password Generator',
-    description:
-      'Generate ultra-strong passwords. Custom length, symbols, numbers. Passphrase mode. Strength meter. 100% client-side.',
+    description: 'Strong passwords or passphrases, 100% client-side.',
     category: 'sysadmin',
     icon: '🔐',
     badge: '🔥 Most Searched',
     searchVolume: '1.1M/mo',
     searchVolumeNum: 1_100_000,
-    tags: ['password', 'generate', 'strong', 'random', 'secure'],
+    tags: ['password', 'generate', 'strong', 'random'],
     existingSlug: 'password-generator',
   },
   {
     id: 'ssh-keygen',
     name: 'SSH Key Generator',
-    description:
-      'Generate RSA (2048/4096) or Ed25519 SSH key pairs entirely in browser. Download private/public keys. Zero server contact.',
+    description: 'RSA SSH key pair via WebCrypto. Zero server contact.',
     category: 'sysadmin',
     icon: '🗝️',
     badge: '',
     searchVolume: '180K/mo',
     searchVolumeNum: 180_000,
-    tags: ['ssh', 'keygen', 'rsa', 'ed25519', 'key', 'generate'],
+    tags: ['ssh', 'keygen', 'rsa', 'pem'],
     existingSlug: 'ssh-keygen',
   },
   {
     id: 'uptime-checker',
-    name: 'Website Uptime Checker',
-    description:
-      'Is it down for everyone or just you? Check from 5 global locations. Response time breakdown. Status code + redirect chain.',
+    name: 'Uptime Checker',
+    description: 'Is the site up? Status, redirect chain, total time.',
     category: 'sysadmin',
     icon: '✅',
     badge: '🔥 Most Searched',
     searchVolume: '870K/mo',
     searchVolumeNum: 870_000,
-    tags: ['uptime', 'down', 'website', 'check', 'monitor', 'status'],
+    tags: ['uptime', 'down', 'website', 'monitor'],
     existingSlug: 'uptime-checker',
   },
 
@@ -583,81 +523,76 @@ const TOOLS: MarketingTool[] = [
   {
     id: 'url-encoder',
     name: 'URL Encoder / Decoder',
-    description:
-      'Encode or decode URLs and query strings. Handles special characters, percent encoding, and double-encoding edge cases.',
+    description: 'Percent-encode and decode URLs and query strings.',
     category: 'security',
     icon: '🔗',
     badge: '🔥 Most Searched',
     searchVolume: '760K/mo',
     searchVolumeNum: 760_000,
-    tags: ['url', 'encode', 'decode', 'percent', 'uri', 'query'],
+    tags: ['url', 'encode', 'decode', 'percent'],
     existingSlug: 'url-encode',
   },
   {
     id: 'ip-blacklist',
     name: 'IP Blacklist Checker',
-    description:
-      'Check if an IP is blacklisted across 100+ DNSBL databases. Email deliverability impact. Bulk check support.',
+    description: 'Check 12 DNSBLs in parallel for any IPv4 address.',
     category: 'security',
     icon: '🚫',
     badge: '',
     searchVolume: '210K/mo',
     searchVolumeNum: 210_000,
-    tags: ['blacklist', 'ip', 'spam', 'dnsbl', 'email', 'reputation'],
+    tags: ['blacklist', 'ip', 'spam', 'dnsbl'],
     existingSlug: 'ip-blacklist',
   },
   {
     id: 'fake-data-generator',
     name: 'Test Data Generator',
-    description:
-      'Generate realistic fake names, emails, addresses, phone numbers, credit card patterns for testing. Bulk export as JSON/CSV.',
+    description: 'Names, emails, addresses, IPs in JSON or CSV.',
     category: 'security',
     icon: '🎭',
     badge: '✨ New',
     searchVolume: '290K/mo',
     searchVolumeNum: 290_000,
-    tags: ['fake', 'test', 'data', 'mock', 'generate', 'dummy'],
+    tags: ['fake', 'test', 'data', 'mock'],
     isNew: true,
     existingSlug: 'fake-data-generator',
   },
   {
     id: 'csp-generator',
     name: 'CSP Header Generator',
-    description:
-      'Build a Content Security Policy header visually. Understand each directive. Test against your site. Copy-ready output.',
+    description: 'Build a Content Security Policy directive by directive.',
     category: 'security',
     icon: '🛡️',
     badge: '',
     searchVolume: '95K/mo',
     searchVolumeNum: 95_000,
-    tags: ['csp', 'content-security-policy', 'header', 'xss', 'security'],
+    tags: ['csp', 'content-security-policy', 'header', 'xss'],
     existingSlug: 'csp-generator',
   },
   {
     id: 'email-header-analyzer',
     name: 'Email Header Analyzer',
-    description:
-      'Paste raw email headers, detect spoofing, trace routing path, check SPF/DKIM/DMARC. Identify spam and phishing sources.',
+    description: 'SPF, DKIM, DMARC plus full Received hop chain.',
     category: 'security',
     icon: '📧',
     badge: '✨ New',
     searchVolume: '145K/mo',
     searchVolumeNum: 145_000,
-    tags: ['email', 'header', 'spf', 'dkim', 'dmarc', 'spam', 'phishing'],
+    tags: ['email', 'header', 'spf', 'dkim', 'dmarc'],
     isNew: true,
     existingSlug: 'email-header-analyzer',
   },
 ];
 
 const TYPING_LINES = [
-  'Formatting JSON...',
-  'Decoding JWT...',
-  'Checking SSL expiry...',
-  'Generating UUID...',
-  'Converting timestamp...',
-  'Resolving DNS...',
-  'Hashing input...',
-  'Validating YAML...',
+  'Format JSON',
+  'Decode JWT',
+  'Check SSL expiry',
+  'Resolve DNS',
+  'Hash input',
+  'Build cron expression',
+  'Validate YAML',
+  'Test regex',
 ];
 
 function fuzzyScore(needle: string, haystack: string): number {
@@ -665,7 +600,6 @@ function fuzzyScore(needle: string, haystack: string): number {
   const n = needle.toLowerCase();
   const h = haystack.toLowerCase();
   if (h.includes(n)) return 1000 - h.indexOf(n);
-  // simple subsequence score
   let i = 0;
   let score = 0;
   for (const ch of h) {
@@ -676,23 +610,6 @@ function fuzzyScore(needle: string, haystack: string): number {
     }
   }
   return i === n.length ? score : 0;
-}
-
-function useCountUp(target: number, duration = 1200) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    let raf: number;
-    const start = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(Math.floor(eased * target));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return value;
 }
 
 function useTypingCycle(lines: string[], { typeMs = 70, holdMs = 1100 } = {}) {
@@ -736,23 +653,6 @@ interface HomeProps {
   onOpenPalette: () => void;
 }
 
-const VALID_TABS: Category[] = [
-  'all',
-  'backend',
-  'frontend',
-  'devops',
-  'sysadmin',
-  'security',
-  'trending',
-  'favorites',
-];
-
-function readHashCategory(): Category {
-  if (typeof window === 'undefined') return 'all';
-  const raw = window.location.hash.replace('#', '').toLowerCase();
-  return (VALID_TABS as string[]).includes(raw) ? (raw as Category) : 'all';
-}
-
 export function Home({ onOpenPalette }: HomeProps) {
   useSeo({
     title:
@@ -763,53 +663,25 @@ export function Home({ onOpenPalette }: HomeProps) {
   });
 
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Category>(readHashCategory);
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
   const [focusIdx, setFocusIdx] = useState(0);
-  const [comingSoon, setComingSoon] = useState<MarketingTool | null>(null);
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistDone, setWaitlistDone] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
   const favoriteSlugs = useFavoritesStore((s) => s.slugs);
   const toggleFavorite = useFavoritesStore((s) => s.toggle);
 
-  // Stat counters
-  const toolCount = useCountUp(TOOLS.length);
-  const userCount = useCountUp(10_000);
   const typing = useTypingCycle(TYPING_LINES);
 
-  // Hash sync
-  useEffect(() => {
-    function onHash() {
-      setTab(readHashCategory());
-    }
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  function selectTab(next: Category) {
-    setTab(next);
-    setFocusIdx(0);
-    if (next === 'all') {
-      history.replaceState(null, '', '/');
-    } else {
-      history.replaceState(null, '', `#${next}`);
-    }
-  }
-
-  // Global CMD+K to focus search
+  // Slash key focuses the search; ⌘K is handled by App for the palette.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        // Already handled by App for palette; we steal it only if hero search is offscreen?
-        // Defer: also focus our hero input as a friendly UX bonus.
-        const el = searchInputRef.current;
-        if (el && document.activeElement !== el) {
-          // App's handler already fires palette — let palette win. We don't focus here.
-        }
-      }
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      const target = e.target as HTMLElement | null;
+      const inField =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+      if (e.key === '/' && !inField) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -818,16 +690,15 @@ export function Home({ onOpenPalette }: HomeProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Filter + sort
-  const filteredTools = useMemo<MarketingTool[]>(() => {
+  const filtered = useMemo<MarketingTool[]>(() => {
     let pool = TOOLS;
-    if (tab === 'trending') {
+    if (filter === 'trending') {
       pool = [...TOOLS].sort((a, b) => b.searchVolumeNum - a.searchVolumeNum);
-    } else if (tab === 'favorites') {
+    } else if (filter === 'new') {
+      pool = TOOLS.filter((t) => t.isNew);
+    } else if (filter === 'favorites') {
       const set = new Set(favoriteSlugs);
       pool = TOOLS.filter((t) => t.existingSlug && set.has(t.existingSlug));
-    } else if (tab !== 'all') {
-      pool = TOOLS.filter((t) => t.category === tab);
     }
     if (!query.trim()) return pool;
     const q = query.trim();
@@ -839,32 +710,38 @@ export function Home({ onOpenPalette }: HomeProps) {
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score)
       .map((x) => x.t);
-  }, [tab, query, favoriteSlugs]);
+  }, [filter, query, favoriteSlugs]);
 
-  // Reset focus on results change
+  // Group by category when no search/filter is narrowing
+  const grouped = useMemo(() => {
+    if (filter !== 'all' || query.trim()) {
+      return null;
+    }
+    return CATEGORY_ORDER.map((cat) => ({
+      category: cat,
+      tools: filtered.filter((t) => t.category === cat),
+    })).filter((g) => g.tools.length > 0);
+  }, [filtered, filter, query]);
+
   useEffect(() => {
     setFocusIdx(0);
-  }, [tab, query]);
+  }, [filter, query]);
 
   function openTool(tool: MarketingTool) {
     if (tool.existingSlug && toolBySlug[tool.existingSlug]) {
       navigate(`/tools/${tool.existingSlug}`);
-    } else {
-      setWaitlistEmail('');
-      setWaitlistDone(false);
-      setComingSoon(tool);
     }
   }
 
   function onSearchKey(e: ReactKeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setFocusIdx((i) => Math.min(filteredTools.length - 1, i + 1));
+      setFocusIdx((i) => Math.min(filtered.length - 1, i + 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setFocusIdx((i) => Math.max(0, i - 1));
     } else if (e.key === 'Enter') {
-      const t = filteredTools[focusIdx];
+      const t = filtered[focusIdx];
       if (t) openTool(t);
     } else if (e.key === 'Escape') {
       setQuery('');
@@ -873,64 +750,52 @@ export function Home({ onOpenPalette }: HomeProps) {
 
   return (
     <div className="-mx-4 sm:-mx-6 -mt-6 sm:-mt-8 relative">
-      {/* Subtle scanline + grid backdrop */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-scanlines opacity-50"
+        className="pointer-events-none absolute inset-0 bg-scanlines opacity-40"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[640px] bg-grid-fade"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-grid-fade"
       />
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-2">
-        <HeroSection
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+        <Hero
           searchInputRef={searchInputRef}
           query={query}
           setQuery={setQuery}
           onSearchKey={onSearchKey}
-          toolCount={toolCount}
-          userCount={userCount}
           typing={typing}
           openPalette={onOpenPalette}
         />
+
+        <FilterChips active={filter} setActive={setFilter} />
+
+        {grouped ? (
+          <div className="space-y-12 pb-12">
+            {grouped.map((g) => (
+              <CategorySection
+                key={g.category}
+                category={g.category}
+                tools={g.tools}
+                onOpen={openTool}
+                favoriteSlugs={favoriteSlugs}
+                onToggleFavorite={toggleFavorite}
+              />
+            ))}
+          </div>
+        ) : (
+          <FlatGrid
+            tools={filtered}
+            focusIdx={focusIdx}
+            favoriteSlugs={favoriteSlugs}
+            onToggleFavorite={toggleFavorite}
+            onOpen={openTool}
+            query={query}
+            filter={filter}
+          />
+        )}
       </div>
-
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-12">
-        <RoleTabs activeTab={tab} onSelect={selectTab} />
-
-        <ToolsGrid
-          tools={filteredTools}
-          focusIdx={focusIdx}
-          favoriteSlugs={favoriteSlugs}
-          onToggleFavorite={(slug) => toggleFavorite(slug)}
-          onOpen={openTool}
-          query={query}
-          tab={tab}
-        />
-      </div>
-
-      <BottomTicker />
-
-      <ComingSoonModal
-        tool={comingSoon}
-        onClose={() => setComingSoon(null)}
-        email={waitlistEmail}
-        setEmail={setWaitlistEmail}
-        done={waitlistDone}
-        onSubmit={() => {
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(waitlistEmail)) return;
-          try {
-            const key = 'debugdaily:waitlist';
-            const list = JSON.parse(localStorage.getItem(key) ?? '[]') as string[];
-            if (comingSoon) list.push(`${comingSoon.id}:${waitlistEmail}`);
-            localStorage.setItem(key, JSON.stringify(list));
-          } catch {
-            /* no-op */
-          }
-          setWaitlistDone(true);
-        }}
-      />
     </div>
   );
 }
@@ -942,168 +807,160 @@ interface HeroProps {
   query: string;
   setQuery: (s: string) => void;
   onSearchKey: (e: ReactKeyboardEvent<HTMLInputElement>) => void;
-  toolCount: number;
-  userCount: number;
   typing: string;
   openPalette: () => void;
 }
 
-function HeroSection({
-  searchInputRef,
-  query,
-  setQuery,
-  onSearchKey,
-  toolCount,
-  userCount,
-  typing,
-  openPalette,
-}: HeroProps) {
+function Hero({ searchInputRef, query, setQuery, onSearchKey, typing, openPalette }: HeroProps) {
   return (
-    <section className="space-y-7">
+    <section className="pt-8 sm:pt-12 pb-6 space-y-5">
       <div className="inline-flex items-center gap-2 chip border-accent/40 text-accent bg-accent/5">
         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-soft" />
-        Open source · Free forever · No login
+        {TOOLS.length} tools · 100% free · No login
       </div>
 
-      <h1 className="font-display text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.02] max-w-4xl">
-        The only tab you'll keep open <span className="text-accent">all day</span>.
+      <h1 className="font-display text-3xl sm:text-5xl font-semibold tracking-tight leading-[1.05] max-w-3xl">
+        Every tool a developer{' '}
+        <span className="text-accent">actually needs</span>. Daily.
       </h1>
 
-      <p className="text-muted text-base sm:text-lg max-w-2xl leading-relaxed">
-        50+ tools for Backend, Frontend, DevOps, SRE & SysAdmin — faster,
-        cleaner, and better than anything else online.
+      <p className="text-muted text-sm sm:text-base max-w-2xl leading-relaxed">
+        A free online toolbox for backend, frontend, DevOps, sysadmin and security work.
+        <span className="hidden sm:inline">
+          {' '}
+          Faster than your bookmarks bar, cleaner than the alternatives.
+        </span>
       </p>
 
-      {/* Live stats bar */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-mono text-muted">
-        <Stat>
-          <span className="text-text font-semibold">{toolCount}+</span> Tools
-        </Stat>
-        <Sep />
-        <Stat>
-          Used by <span className="text-text font-semibold">{userCount.toLocaleString()}+</span> developers
-        </Stat>
-        <Sep />
-        <Stat>No login required</Stat>
-        <Sep />
-        <Stat className="text-accent">100% free</Stat>
-      </div>
-
-      {/* Terminal */}
-      <div className="card font-mono text-sm overflow-hidden max-w-2xl">
-        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-surface-2/50">
-          <span className="w-2.5 h-2.5 rounded-full bg-error/70" />
-          <span className="w-2.5 h-2.5 rounded-full bg-warning/70" />
-          <span className="w-2.5 h-2.5 rounded-full bg-accent/70" />
-          <span className="ml-2 text-2xs text-subtle uppercase tracking-wider">
-            ~/debugdaily
-          </span>
-        </div>
-        <div className="px-4 py-3 flex items-center gap-2">
-          <span className="text-accent">$</span>
-          <span className="text-text">{typing}</span>
-          <span className="inline-block w-1.5 h-4 bg-accent align-middle animate-blink" />
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-2xl">
-        <div className="relative">
-          <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-subtle pointer-events-none"
-            aria-hidden
-          />
-          <input
-            ref={searchInputRef}
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onSearchKey}
-            placeholder="Search 50+ tools... (e.g. JSON formatter, IP lookup, cron)"
-            aria-label="Search developer tools"
-            className="w-full pl-12 pr-28 py-4 rounded-xl bg-surface border border-border-strong text-text placeholder:text-subtle focus:outline-none focus:border-accent focus:shadow-glow transition-all text-base font-mono"
-          />
-          <button
-            type="button"
-            onClick={openPalette}
-            aria-label="Open command palette"
-            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border bg-surface-2 hover:border-accent hover:text-accent transition-colors text-xs"
-          >
-            <Command className="w-3.5 h-3.5" aria-hidden />
-            <span className="font-mono">K</span>
-          </button>
-        </div>
+      {/* Big search bar */}
+      <div className="relative max-w-3xl">
+        <Search
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-subtle pointer-events-none"
+          aria-hidden
+        />
+        <input
+          ref={searchInputRef}
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onSearchKey}
+          placeholder={`Search ${TOOLS.length}+ tools — try "${typing}"`}
+          aria-label="Search developer tools"
+          className="w-full pl-12 pr-28 py-4 rounded-xl bg-surface border border-border-strong text-text placeholder:text-subtle focus:outline-none focus:border-accent focus:shadow-glow transition-all text-base font-mono"
+        />
+        <button
+          type="button"
+          onClick={openPalette}
+          aria-label="Open command palette"
+          className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border bg-surface-2 hover:border-accent hover:text-accent transition-colors text-xs"
+        >
+          <Command className="w-3.5 h-3.5" aria-hidden />
+          <span className="font-mono">K</span>
+        </button>
       </div>
     </section>
   );
 }
 
-function Stat({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <span className={className}>{children}</span>;
-}
-function Sep() {
-  return <span aria-hidden className="text-subtle/60">·</span>;
-}
+/* ─────────────────────────────  FILTER CHIPS  ───────────────────────────── */
 
-/* ─────────────────────────────  ROLE TABS  ───────────────────────────── */
+const FILTER_META: Record<Filter, { label: string; icon: React.ReactNode }> = {
+  all: { label: 'All Tools', icon: <span aria-hidden>◇</span> },
+  trending: { label: 'Most Searched', icon: <Flame className="w-3.5 h-3.5" aria-hidden /> },
+  new: { label: 'New', icon: <Sparkles className="w-3.5 h-3.5" aria-hidden /> },
+  favorites: { label: 'Favorites', icon: <Star className="w-3.5 h-3.5" aria-hidden /> },
+};
 
-function RoleTabs({ activeTab, onSelect }: { activeTab: Category; onSelect: (c: Category) => void }) {
+function FilterChips({ active, setActive }: { active: Filter; setActive: (f: Filter) => void }) {
   return (
     <nav
       role="tablist"
-      aria-label="Filter tools by role"
-      className="overflow-x-auto -mx-4 sm:mx-0 mb-6 scrollbar-hide"
+      aria-label="Filter tools"
+      className="flex flex-wrap items-center gap-1.5 mb-8"
     >
-      <div className="flex items-center gap-2 px-4 sm:px-0 min-w-max">
-        {TABS.map((t) => {
-          const active = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={active}
-              onClick={() => onSelect(t.id)}
-              className={`relative inline-flex items-center gap-2 px-3.5 py-2 rounded-full border text-sm font-medium transition-all
-                ${
-                  active
-                    ? `${t.tone} border-current bg-current/10 shadow-[0_0_18px_-6px_currentColor]`
-                    : 'text-muted border-border bg-surface hover:text-text hover:border-border-strong'
-                }`}
-            >
-              <span aria-hidden className="text-base leading-none">
-                {t.icon}
-              </span>
-              <span>{t.label}</span>
-              {active ? (
-                <span className="absolute -bottom-px left-3 right-3 h-px bg-current/70" />
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      {(Object.keys(FILTER_META) as Filter[]).map((f) => {
+        const isActive = active === f;
+        return (
+          <button
+            key={f}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => setActive(f)}
+            className={
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ' +
+              (isActive
+                ? 'bg-accent/10 border-accent text-accent'
+                : 'bg-surface border-border text-muted hover:text-text hover:border-border-strong')
+            }
+          >
+            {FILTER_META[f].icon}
+            <span>{FILTER_META[f].label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }
 
-/* ─────────────────────────────  TOOLS GRID  ───────────────────────────── */
+/* ─────────────────────────────  CATEGORY SECTION  ───────────────────────────── */
 
-interface GridProps {
+interface SectionProps {
+  category: RoleCategory;
+  tools: MarketingTool[];
+  onOpen: (t: MarketingTool) => void;
+  favoriteSlugs: string[];
+  onToggleFavorite: (slug: string) => void;
+}
+
+function CategorySection({ category, tools, onOpen, favoriteSlugs, onToggleFavorite }: SectionProps) {
+  const meta = ROLE_META[category];
+  return (
+    <section id={category} className="scroll-mt-20 space-y-4">
+      <header className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
+        <h2 className="flex items-center gap-2.5 font-display text-xl sm:text-2xl font-semibold tracking-tight">
+          <span aria-hidden className={`w-2 h-2 rounded-full ${meta.dot}`} />
+          <span className={meta.color}>{meta.label}</span>
+        </h2>
+        <span className="text-2xs uppercase tracking-wider font-mono text-subtle">
+          {tools.length} {tools.length === 1 ? 'tool' : 'tools'}
+        </span>
+      </header>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
+        {tools.map((tool, i) => (
+          <ToolCard
+            key={tool.id}
+            tool={tool}
+            focused={false}
+            isFavorite={!!tool.existingSlug && favoriteSlugs.includes(tool.existingSlug)}
+            onToggleFavorite={onToggleFavorite}
+            onOpen={onOpen}
+            stagger={i}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* ─────────────────────────────  FLAT GRID (search/filter view)  ───────────────────────────── */
+
+interface FlatGridProps {
   tools: MarketingTool[];
   focusIdx: number;
   favoriteSlugs: string[];
   onToggleFavorite: (slug: string) => void;
-  onOpen: (tool: MarketingTool) => void;
+  onOpen: (t: MarketingTool) => void;
   query: string;
-  tab: Category;
+  filter: Filter;
 }
 
-function ToolsGrid({ tools, focusIdx, favoriteSlugs, onToggleFavorite, onOpen, query, tab }: GridProps) {
+function FlatGrid({ tools, focusIdx, favoriteSlugs, onToggleFavorite, onOpen, query, filter }: FlatGridProps) {
   if (tools.length === 0) {
     return (
-      <div className="card p-10 text-center space-y-3">
+      <div className="card p-10 text-center space-y-2 mb-12">
         <div className="text-2xl">¯\_(ツ)_/¯</div>
         <p className="text-muted text-sm">
-          {tab === 'favorites' ? (
+          {filter === 'favorites' ? (
             <>
               No favorites yet. Bookmark tools with the <Star className="inline w-3.5 h-3.5 -mt-0.5" /> icon.
             </>
@@ -1117,11 +974,7 @@ function ToolsGrid({ tools, focusIdx, favoriteSlugs, onToggleFavorite, onOpen, q
     );
   }
   return (
-    <ul
-      className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-      role="list"
-      aria-label="Developer tools"
-    >
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-12" role="list">
       {tools.map((tool, i) => (
         <ToolCard
           key={tool.id}
@@ -1137,42 +990,25 @@ function ToolsGrid({ tools, focusIdx, favoriteSlugs, onToggleFavorite, onOpen, q
   );
 }
 
+/* ─────────────────────────────  TOOL CARD  ───────────────────────────── */
+
 interface CardProps {
   tool: MarketingTool;
   focused: boolean;
   isFavorite: boolean;
   onToggleFavorite: (slug: string) => void;
-  onOpen: (tool: MarketingTool) => void;
+  onOpen: (t: MarketingTool) => void;
   stagger: number;
 }
 
 function ToolCard({ tool, focused, isFavorite, onToggleFavorite, onOpen, stagger }: CardProps) {
   const meta = ROLE_META[tool.category];
-  const [copied, setCopied] = useState(false);
-  const built = !!tool.existingSlug;
-
-  function copyShareLink(e: React.MouseEvent) {
-    e.stopPropagation();
-    const url = `${window.location.origin}${
-      built ? `/tools/${tool.existingSlug}` : `/?tool=${tool.id}`
-    }`;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1100);
-      })
-      .catch(() => {
-        /* no-op */
-      });
-  }
-
   return (
     <li
       data-keywords={tool.tags.join(',')}
       data-category={tool.category}
       style={{
-        animationDelay: `${Math.min(stagger * 30, 360)}ms`,
+        animationDelay: `${Math.min(stagger * 25, 240)}ms`,
         animationFillMode: 'both',
       }}
       className="animate-slide-up"
@@ -1183,46 +1019,40 @@ function ToolCard({ tool, focused, isFavorite, onToggleFavorite, onOpen, stagger
         tabIndex={0}
         role="button"
         aria-label={`Open ${tool.name}`}
-        className={`group relative card p-5 cursor-pointer transition-all duration-200
-                    hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2
-                    ${focused ? `ring-2 ${meta.ring}` : ''}
-                    overflow-hidden`}
+        className={`group relative card p-4 cursor-pointer transition-all duration-150
+                    hover:border-border-strong hover:bg-surface-2 hover:-translate-y-0.5
+                    ${focused ? 'ring-2 ring-accent/40' : ''}`}
       >
-        {/* Left category accent */}
-        <span
-          aria-hidden
-          className={`absolute left-0 top-0 bottom-0 w-[3px] ${meta.dot}`}
-        />
-
-        {/* Glow on hover */}
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${meta.bg}`}
-        />
-
-        <div className="relative flex items-start gap-3 mb-2">
+        <div className="flex items-start gap-3">
           <span
             aria-hidden
-            className={`shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-md font-mono text-base font-semibold border border-border bg-surface-2 ${meta.color}`}
+            className={`shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-md font-mono text-sm font-semibold border border-border ${meta.bg} ${meta.color}`}
           >
             {tool.icon}
           </span>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-mono font-semibold text-text leading-tight">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-mono font-semibold text-text leading-tight pr-6">
                 {tool.name}
-              </h2>
+              </h3>
+              {tool.isNew ? (
+                <span
+                  className="chip text-cyan border-cyan/30 bg-cyan/10 shrink-0"
+                  title="Recently added"
+                >
+                  New
+                </span>
+              ) : null}
             </div>
-            <div className="flex items-center gap-1.5 mt-1 text-2xs uppercase tracking-wider font-mono">
-              <span className={`${meta.color}`}>{meta.label}</span>
-              <span className="text-subtle">·</span>
-              <span className="text-subtle">{tool.searchVolume}</span>
-            </div>
+            <p className="text-xs text-muted leading-relaxed mt-1">{tool.description}</p>
           </div>
+        </div>
 
-          {/* hover actions */}
-          <div className="absolute top-0 right-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            {built ? (
+        {/* Bottom row: search volume + favorite + arrow */}
+        <div className="flex items-center justify-between mt-3 text-2xs font-mono">
+          <span className="text-subtle">{tool.searchVolume}</span>
+          <div className="flex items-center gap-2">
+            {tool.existingSlug ? (
               <button
                 type="button"
                 aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
@@ -1231,204 +1061,20 @@ function ToolCard({ tool, focused, isFavorite, onToggleFavorite, onOpen, stagger
                   e.stopPropagation();
                   if (tool.existingSlug) onToggleFavorite(tool.existingSlug);
                 }}
-                className={`p-1.5 rounded-md hover:bg-surface ${
+                className={`p-1 -m-1 transition-colors ${
                   isFavorite ? 'text-accent' : 'text-subtle hover:text-accent'
                 }`}
               >
-                {isFavorite ? <Star className="w-4 h-4 fill-current" /> : <BookmarkPlus className="w-4 h-4" />}
+                {isFavorite ? <Star className="w-3.5 h-3.5 fill-current" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
               </button>
             ) : null}
-            <button
-              type="button"
-              aria-label="Copy tool link"
-              onClick={copyShareLink}
-              className="p-1.5 rounded-md text-subtle hover:text-accent hover:bg-surface"
-            >
-              {copied ? <Check className="w-4 h-4 text-accent" /> : <Copy className="w-4 h-4" />}
-            </button>
+            <ArrowRight
+              className="w-3.5 h-3.5 text-subtle group-hover:text-accent group-hover:translate-x-0.5 transition-all"
+              aria-hidden
+            />
           </div>
-        </div>
-
-        <p className="relative text-sm text-muted leading-relaxed mb-3">
-          {tool.description}
-        </p>
-
-        <div className="relative flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {tool.badge ? <Badge raw={tool.badge} /> : null}
-            {!built && tool.badge !== '✨ New' && !tool.isNew ? (
-              <span className="chip text-subtle">Coming soon</span>
-            ) : null}
-            {built ? (
-              <span className="chip text-accent border-accent/30 bg-accent/10">
-                Live
-              </span>
-            ) : null}
-          </div>
-
-          <span
-            aria-hidden
-            className="inline-flex items-center gap-1 text-xs font-mono text-subtle group-hover:text-accent transition-colors"
-          >
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-              Open
-            </span>
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </span>
         </div>
       </article>
     </li>
   );
 }
-
-function Badge({ raw }: { raw: string }) {
-  if (raw.includes('Most Searched') || raw.includes('#1')) {
-    return (
-      <span className="chip text-role-trending border-role-trending/30 bg-role-trending/10">
-        <Flame className="w-3 h-3" aria-hidden />
-        {raw.replace('🔥 ', '').replace('🔥', '')}
-      </span>
-    );
-  }
-  if (raw.includes('New')) {
-    return (
-      <span className="chip text-cyan border-cyan/30 bg-cyan/10">
-        <Sparkles className="w-3 h-3" aria-hidden />
-        New
-      </span>
-    );
-  }
-  return <span className="chip">{raw}</span>;
-}
-
-/* ─────────────────────────────  TICKER  ───────────────────────────── */
-
-function BottomTicker() {
-  const items = TOOLS.slice(0, 24).map((t) => t.name);
-  const doubled = [...items, ...items];
-  return (
-    <section className="relative border-y border-border bg-surface/40 overflow-hidden mt-4">
-      <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-bg to-transparent z-10 pointer-events-none" />
-      <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-bg to-transparent z-10 pointer-events-none" />
-      <div className="flex items-center gap-8 py-3 animate-ticker w-max font-mono text-xs text-muted whitespace-nowrap">
-        {doubled.map((name, i) => (
-          <span key={i} className="inline-flex items-center gap-2">
-            <span className="text-accent">›</span>
-            {name}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────  COMING SOON MODAL  ───────────────────────────── */
-
-interface ModalProps {
-  tool: MarketingTool | null;
-  onClose: () => void;
-  email: string;
-  setEmail: (s: string) => void;
-  done: boolean;
-  onSubmit: () => void;
-}
-
-function ComingSoonModal({ tool, onClose, email, setEmail, done, onSubmit }: ModalProps) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    if (tool) window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [tool, onClose]);
-
-  if (!tool) return null;
-  const meta = ROLE_META[tool.category];
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="coming-soon-title"
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-fade-in"
-    >
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div className="relative w-full max-w-md card p-6 shadow-glow animate-slide-up">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-3 right-3 p-1.5 rounded-md text-subtle hover:text-text hover:bg-surface-2"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        <div className="flex items-center gap-3 mb-4">
-          <span
-            className={`inline-flex items-center justify-center w-12 h-12 rounded-md font-mono text-lg font-semibold border border-border bg-surface-2 ${meta.color}`}
-          >
-            {tool.icon}
-          </span>
-          <div>
-            <h2 id="coming-soon-title" className="font-display text-xl font-semibold">
-              {tool.name}
-            </h2>
-            <span className={`text-2xs font-mono uppercase tracking-wider ${meta.color}`}>
-              {meta.label}
-            </span>
-          </div>
-        </div>
-
-        <p className="text-sm text-muted leading-relaxed mb-5">
-          {tool.description}
-        </p>
-
-        {done ? (
-          <div className="card p-4 bg-accent/5 border-accent/30 text-sm text-text">
-            <div className="flex items-center gap-2 mb-1">
-              <Check className="w-4 h-4 text-accent" />
-              <span className="font-semibold">You're on the list.</span>
-            </div>
-            <p className="text-muted text-xs">
-              We'll email you the moment {tool.name} ships.
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="text-2xs font-mono uppercase tracking-wider text-subtle mb-2">
-              Tool in development — join the waitlist
-            </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onSubmit();
-              }}
-              className="flex flex-col sm:flex-row gap-2"
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.dev"
-                required
-                aria-label="Email"
-                className="input flex-1"
-              />
-              <button type="submit" className="btn-accent">
-                Notify me
-              </button>
-            </form>
-            <p className="text-2xs text-subtle mt-3">
-              No spam. One email when this tool launches. Unsubscribe anytime.
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-

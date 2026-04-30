@@ -6,11 +6,12 @@ interface HeaderProps {
   onOpenPalette: () => void;
 }
 
-const NAV: Array<{ label: string; href: string }> = [
-  { label: 'All Tools', href: '/' },
-  { label: 'By Role', href: '/#backend' },
-  { label: 'Most Searched', href: '/#trending' },
-  { label: 'New Tools', href: '/#new' },
+const NAV: Array<{ label: string; href: string; tone: string }> = [
+  { label: 'Backend', href: '/#backend', tone: 'hover:text-role-backend' },
+  { label: 'Frontend', href: '/#frontend', tone: 'hover:text-role-frontend' },
+  { label: 'DevOps', href: '/#devops', tone: 'hover:text-role-devops' },
+  { label: 'SysAdmin', href: '/#sysadmin', tone: 'hover:text-role-sysadmin' },
+  { label: 'Security', href: '/#security', tone: 'hover:text-role-security' },
 ];
 
 export function Header({ onOpenPalette }: HeaderProps) {
@@ -48,7 +49,7 @@ export function Header({ onOpenPalette }: HeaderProps) {
             <a
               key={n.href}
               href={n.href}
-              className="px-3 py-1.5 rounded-md text-sm text-muted hover:text-text hover:bg-surface transition-colors"
+              className={`px-3 py-1.5 rounded-md text-sm text-muted ${n.tone} hover:bg-surface transition-colors`}
             >
               {n.label}
             </a>
@@ -118,7 +119,7 @@ export function Header({ onOpenPalette }: HeaderProps) {
               <a
                 key={n.href}
                 href={n.href}
-                className="px-3 py-2 rounded-md text-sm text-muted hover:text-text hover:bg-surface"
+                className={`px-3 py-2 rounded-md text-sm text-muted ${n.tone} hover:bg-surface`}
               >
                 {n.label}
               </a>
