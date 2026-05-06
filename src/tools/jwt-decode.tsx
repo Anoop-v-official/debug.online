@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
+import { OutputPane } from '../components/OutputPane';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
 import { consumeSmartPaste } from '../lib/smartPaste';
@@ -83,18 +84,20 @@ export default function JwtDecode() {
             leftLabel="Header"
             rightLabel="Payload"
             left={
-              <pre className="card p-3 text-xs font-mono overflow-auto whitespace-pre">
-                {JSON.stringify(result.data.header, null, 2)}
-              </pre>
+              <OutputPane
+                text={JSON.stringify(result.data.header, null, 2)}
+                copyLabel="Copy header JSON"
+              />
             }
             right={
-              <pre className="card p-3 text-xs font-mono overflow-auto whitespace-pre">
-                {JSON.stringify(result.data.payload, null, 2)}
-              </pre>
+              <OutputPane
+                text={JSON.stringify(result.data.payload, null, 2)}
+                copyLabel="Copy payload JSON"
+              />
             }
           />
         ) : (
-          <pre className="card p-3 text-xs font-mono text-error">{result.error}</pre>
+          <OutputPane text={result.error} wrap tone="error" />
         )}
         {result.ok && result.data.expIn !== undefined ? (
           <p className="text-xs text-muted">

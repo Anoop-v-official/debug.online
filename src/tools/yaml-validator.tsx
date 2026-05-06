@@ -3,6 +3,7 @@ import yaml from 'js-yaml';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['yaml-validator']!;
@@ -79,9 +80,9 @@ export default function YamlValidator() {
         }
         right={
           result.ok ? (
-            <pre className="pane">{result.text}</pre>
+            <OutputPane text={result.text} copyLabel="Copy output" />
           ) : (
-            <pre className="pane-wrap text-error">{result.error}</pre>
+            <OutputPane text={result.error} wrap tone="error" />
           )
         }
       />

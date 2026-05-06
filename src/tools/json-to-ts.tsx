@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['json-to-ts']!;
@@ -118,9 +119,9 @@ export default function JsonToTs() {
         }
         right={
           result.ok ? (
-            <pre className="pane">{result.text}</pre>
+            <OutputPane text={result.text} copyLabel="Copy TypeScript" />
           ) : (
-            <pre className="pane-wrap text-error">{result.error}</pre>
+            <OutputPane text={result.error} wrap tone="error" />
           )
         }
       />

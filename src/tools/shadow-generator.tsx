@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['shadow-generator']!;
@@ -132,7 +133,11 @@ export default function ShadowGenerator() {
           </button>
         </div>
 
-        <pre className="pane-wrap">{`${mode === 'box' ? 'box-shadow' : 'text-shadow'}: ${css};`}</pre>
+        <OutputPane
+          text={`${mode === 'box' ? 'box-shadow' : 'text-shadow'}: ${css};`}
+          wrap
+          copyLabel="Copy CSS"
+        />
       </div>
     </ToolFrame>
   );

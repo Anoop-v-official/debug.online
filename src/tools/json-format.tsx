@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
 import { utf8ByteSize, formatBytes } from '../lib/byteSize';
@@ -21,7 +22,7 @@ export default function JsonFormat() {
   }, []);
 
   const result = useMemo(() => {
-    if (!input.trim()) return { ok: true, text: '' };
+    if (!input.trim()) return { ok: true as const, text: '' };
     try {
       const parsed = JSON.parse(input);
       const text =
@@ -81,13 +82,13 @@ export default function JsonFormat() {
         }
         right={
           result.ok ? (
-            <pre className="pane">
+            <OutputPane text={result.text} copyLabel="Copy output">
               {result.text || (
                 <span className="text-subtle">Output appears here.</span>
               )}
-            </pre>
+            </OutputPane>
           ) : (
-            <pre className="pane-wrap text-error">{result.error}</pre>
+            <OutputPane text={result.error} wrap tone="error" />
           )
         }
       />

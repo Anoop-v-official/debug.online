@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 import { utf8ByteSize, formatBytes } from '../lib/byteSize';
 
@@ -63,7 +64,14 @@ export default function SvgOptimizer() {
               className="textarea font-mono text-xs"
             />
           }
-          right={<pre className="pane-wrap text-xs">{optimized}</pre>}
+          right={
+            <OutputPane
+              text={optimized}
+              wrap
+              className="text-xs"
+              copyLabel="Copy optimized SVG"
+            />
+          }
         />
 
         <div className="grid sm:grid-cols-2 gap-3">

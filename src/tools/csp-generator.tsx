@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['csp-generator']!;
@@ -97,7 +98,7 @@ export default function CspGenerator() {
           </label>
         </div>
 
-        <pre className="pane-wrap">{`${headerName}: ${policy}`}</pre>
+        <OutputPane text={`${headerName}: ${policy}`} wrap copyLabel="Copy CSP header" />
 
         <p className="text-2xs text-subtle font-mono">
           Tighten incrementally — start with Report-Only, watch the violation reports for a week, then enforce. Avoid `'unsafe-inline'` and `'unsafe-eval'` in production.

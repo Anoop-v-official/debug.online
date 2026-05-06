@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['hash-generator']!;
@@ -72,9 +73,9 @@ export default function HashGenerator() {
           spellCheck={false}
           className="textarea"
         />
-        <pre className="card p-3 text-xs font-mono break-all whitespace-pre-wrap min-h-[80px] flex items-center">
+        <OutputPane text={out} wrap copyLabel="Copy hash">
           {out || <span className="text-subtle">Hash appears here.</span>}
-        </pre>
+        </OutputPane>
       </div>
     </ToolFrame>
   );

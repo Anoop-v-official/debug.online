@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['fake-data-generator']!;
@@ -100,7 +101,7 @@ export default function FakeDataGenerator() {
         </>
       }
     >
-      <pre className="pane text-xs">{text}</pre>
+      <OutputPane text={text} className="text-xs" copyLabel="Copy data" />
       <p className="text-2xs text-subtle font-mono mt-3">
         Realistic-looking but synthetic data for testing. No real credit card numbers — `cardLast4` is purely random digits.
       </p>

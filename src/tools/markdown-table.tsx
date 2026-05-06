@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['markdown-table']!;
@@ -169,7 +170,7 @@ export default function MarkdownTable() {
           </button>
         </div>
 
-        <pre className="pane-wrap text-xs">{md}</pre>
+        <OutputPane text={md} wrap className="text-xs" copyLabel="Copy markdown" />
 
         <details className="card p-3">
           <summary className="cursor-pointer text-2xs uppercase tracking-wide text-subtle font-mono">

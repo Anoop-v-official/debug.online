@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['curl-builder']!;
@@ -152,7 +153,7 @@ export default function CurlBuilder() {
           <Toggle label="-i  Include response headers" checked={showHeaders} onChange={setShowHeaders} />
         </div>
 
-        <pre className="pane-wrap">{cmd}</pre>
+        <OutputPane text={cmd} wrap copyLabel="Copy command" />
       </div>
     </ToolFrame>
   );

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['html-encode']!;
@@ -72,9 +73,9 @@ export default function HtmlEncode() {
           />
         }
         right={
-          <pre className="pane-wrap">
+          <OutputPane text={output} wrap copyLabel="Copy output">
             {output || <span className="text-subtle">Output appears here.</span>}
-          </pre>
+          </OutputPane>
         }
       />
     </ToolFrame>

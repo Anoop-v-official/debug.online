@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['json-path']!;
@@ -190,9 +191,9 @@ export default function JsonPath() {
           }
           right={
             result.ok ? (
-              <pre className="pane">{JSON.stringify(result.value, null, 2)}</pre>
+              <OutputPane text={JSON.stringify(result.value, null, 2)} copyLabel="Copy result" />
             ) : (
-              <pre className="pane-wrap text-error">{result.error}</pre>
+              <OutputPane text={result.error} wrap tone="error" />
             )
           }
         />

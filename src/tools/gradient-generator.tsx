@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['gradient-generator']!;
@@ -171,7 +172,7 @@ export default function GradientGenerator() {
           </div>
         </div>
 
-        <pre className="pane-wrap">{`background: ${css};`}</pre>
+        <OutputPane text={`background: ${css};`} wrap copyLabel="Copy CSS" />
       </div>
     </ToolFrame>
   );

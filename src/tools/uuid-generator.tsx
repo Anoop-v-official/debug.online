@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['uuid-generator']!;
@@ -36,7 +37,7 @@ export default function UuidGenerator() {
         </>
       }
     >
-      <pre className="pane">{list.join('\n')}</pre>
+      <OutputPane text={list.join('\n')} copyLabel="Copy all UUIDs" />
     </ToolFrame>
   );
 }

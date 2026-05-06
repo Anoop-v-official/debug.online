@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['random-number']!;
@@ -122,7 +123,7 @@ export default function RandomNumber() {
         {err ? <pre className="card p-3 text-xs font-mono text-error">{err}</pre> : null}
 
         {result.length > 0 ? (
-          <pre className="pane-wrap font-mono">{result.join(', ')}</pre>
+          <OutputPane text={result.join(', ')} wrap copyLabel="Copy numbers" />
         ) : (
           <pre className="pane-wrap text-subtle">Click Generate to produce a list.</pre>
         )}

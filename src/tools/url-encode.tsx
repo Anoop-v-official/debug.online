@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['url-encode']!;
@@ -64,11 +65,11 @@ export default function UrlEncode() {
         }
         right={
           output.ok ? (
-            <pre className="pane-wrap">
+            <OutputPane text={output.text} wrap copyLabel="Copy output">
               {output.text || <span className="text-subtle">Output appears here.</span>}
-            </pre>
+            </OutputPane>
           ) : (
-            <pre className="pane-wrap text-error">{output.error}</pre>
+            <OutputPane text={output.error} wrap tone="error" />
           )
         }
       />

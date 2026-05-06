@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { CopyButton } from '../components/CopyButton';
+import { OutputPane } from '../components/OutputPane';
 import { toolBySlug } from '../lib/tools';
 
 const tool = toolBySlug['nginx-generator']!;
@@ -202,7 +203,7 @@ export default function NginxGenerator() {
           </div>
         </div>
 
-        <pre className="pane">{text}</pre>
+        <OutputPane text={text} copyLabel="Copy config" />
       </div>
     </ToolFrame>
   );
