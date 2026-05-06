@@ -29,6 +29,9 @@ export function Layout({
             <span className="text-accent">{'<daily>'}</span>
           </span>
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link to="/blog" className="hover:text-text">
+              Blog
+            </Link>
             <Link to="/about" className="hover:text-text">
               About
             </Link>

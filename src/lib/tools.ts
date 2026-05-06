@@ -1311,6 +1311,214 @@ export const tools: Tool[] = [
       ],
     },
   },
+  {
+    slug: 'qr-code-generator',
+    name: 'QR Code Generator',
+    description: 'Generate QR codes for any text or URL, PNG and SVG download.',
+    category: 'generate',
+    keywords: ['qr', 'qrcode', 'barcode', 'wifi', 'png', 'svg'],
+    Component: lazy(() => import('../tools/qr-code-generator')),
+    seo: {
+      title: 'QR Code Generator Online — Free, PNG & SVG, Custom Colors',
+      description:
+        'Generate QR codes for URLs, text, vCards, or Wi-Fi credentials. Download as PNG or SVG. Custom error correction, size, foreground and background colors. 100% in-browser.',
+    },
+    content: {
+      about:
+        'Wraps the open-source qrcode library to produce QR codes entirely in your browser. Adjustable error correction (L/M/Q/H), pixel size, and dual-color theming. Output is a real PNG/SVG, not an embedded screenshot.',
+      useCases: [
+        'Putting a sign-up URL on a printed flyer or conference badge.',
+        'Generating a Wi-Fi join QR for guests (use the WIFI: format).',
+        'Embedding a deeplink in an email or video frame.',
+      ],
+      gotchas: [
+        'Higher error correction (Q/H) makes the code more resilient to damage but stores less data.',
+        'Black-on-white scans more reliably than custom colors. Stick to high-contrast pairs.',
+      ],
+    },
+  },
+  {
+    slug: 'random-number',
+    name: 'Random Number Generator',
+    description: 'Cryptographically random numbers in a range, with or without duplicates.',
+    category: 'generate',
+    keywords: ['random', 'number', 'rng', 'lottery', 'pick', 'generator'],
+    Component: lazy(() => import('../tools/random-number')),
+    seo: {
+      title: 'Random Number Generator — Cryptographically Secure, Online',
+      description:
+        'Generate cryptographically random integers in any range, with or without duplicates. Optional ascending/descending sort. Backed by crypto.getRandomValues — suitable for tokens.',
+    },
+    content: {
+      about:
+        'Uses crypto.getRandomValues for true random output (not Math.random). Configurable range, count, duplicate behavior, and result ordering.',
+      useCases: [
+        'Picking a winner for a giveaway or lottery in front of an audience.',
+        'Generating a list of seed values for property-based testing.',
+        'Producing a random sample of row IDs from a known range.',
+      ],
+      gotchas: [
+        '`Math.random` is NOT cryptographically secure — never use it for tokens, OTPs, or anything an attacker would care about.',
+        'Modulo bias is negligible for ranges much smaller than 2^32 (which this tool handles).',
+      ],
+    },
+  },
+  {
+    slug: 'timezone-converter',
+    name: 'Time Zone Converter',
+    description: 'Convert any moment to multiple time zones at once.',
+    category: 'convert',
+    keywords: ['timezone', 'tz', 'utc', 'convert', 'meeting', 'world clock'],
+    Component: lazy(() => import('../tools/timezone-converter')),
+    seo: {
+      title: 'Time Zone Converter — World Clock for Meetings, Online',
+      description:
+        'Convert any date and time across multiple time zones simultaneously. Auto-detects your local zone. Add or remove zones. IANA names supported (Asia/Tokyo, America/New_York…).',
+    },
+    content: {
+      about:
+        'Uses the browser\'s `Intl.DateTimeFormat` API for accurate conversion across IANA time zones. DST is handled automatically. Add as many zones as you want; the page persists nothing — refresh to reset.',
+      useCases: [
+        'Picking a meeting time that works for teams across continents.',
+        'Verifying when a deploy window opens across regions.',
+        'Translating a UTC timestamp from a log into something a non-engineer can act on.',
+      ],
+      gotchas: [
+        'IANA names are case-sensitive (`America/New_York`, not `america/new_york`).',
+        'Past dates use the historical DST rules at that point — usually correct, but confirm if you\'re investigating something pre-2000.',
+      ],
+    },
+  },
+  {
+    slug: 'markdown-table',
+    name: 'Markdown Table Generator',
+    description: 'Build markdown tables visually, import from CSV or TSV.',
+    category: 'generate',
+    keywords: ['markdown', 'table', 'csv', 'tsv', 'github'],
+    Component: lazy(() => import('../tools/markdown-table')),
+    seo: {
+      title: 'Markdown Table Generator — Visual Editor, CSV Import, Online',
+      description:
+        'Edit a markdown table in a familiar grid: add rows, columns, set column alignment. Import existing CSV or TSV. Output is GitHub-flavored Markdown ready to paste.',
+    },
+    content: {
+      about:
+        'Skips the "remember the pipe-and-dash syntax" tax. Type into cells like a spreadsheet, choose alignment per column, and copy out the markdown. Optional CSV/TSV import for migrating existing tables.',
+      useCases: [
+        'Adding a comparison table to a README without doing the syntax in your head.',
+        'Converting a spreadsheet snippet into markdown for a PR description.',
+        'Drafting documentation tables in a clean visual editor.',
+      ],
+      gotchas: [
+        'Pipe characters inside cells need to be escaped as `\\|` when you paste the result somewhere.',
+        'Some markdown renderers ignore the `:---:` alignment row — confirm your target supports GFM.',
+      ],
+    },
+  },
+  {
+    slug: 'date-diff',
+    name: 'Date Diff Calculator',
+    description: 'Difference between two dates in years, days, hours and working days.',
+    category: 'convert',
+    keywords: ['date', 'diff', 'difference', 'duration', 'working days'],
+    Component: lazy(() => import('../tools/date-diff')),
+    seo: {
+      title: 'Date Difference Calculator — Years, Days, Working Days Online',
+      description:
+        'Compute the difference between two dates: total seconds/minutes/hours/days/weeks plus a calendar-aware breakdown (Yy Mm Dd Hh) and working-day count (Mon–Fri).',
+    },
+    content: {
+      about:
+        'Two date/time inputs, multiple ways to read the gap: total counts at every common granularity, a calendar-aware "1y 2m 5d 6h" breakdown, and a working-days (Mon–Fri) count.',
+      useCases: [
+        'Counting working days between two project milestones.',
+        'Sanity-checking a contract start/end period.',
+        'Quickly answering "how long ago was…" without spreadsheet formulas.',
+      ],
+      gotchas: [
+        'Working-days count assumes Mon–Fri are workdays — does not account for holidays.',
+        'Months don\'t have a fixed number of days, so the "y/m/d" breakdown can shift if you swap the two dates.',
+      ],
+    },
+  },
+  {
+    slug: 'curl-builder',
+    name: 'cURL Command Builder',
+    description: 'Build a cURL command from method, URL, headers and body.',
+    category: 'generate',
+    keywords: ['curl', 'command', 'http', 'request', 'cli'],
+    Component: lazy(() => import('../tools/curl-builder')),
+    seo: {
+      title: 'cURL Command Builder — Visual Form to Shell Online',
+      description:
+        'Build a cURL command from a visual form: method, URL, headers, body, and common flags (-L, -k, -s, -i). Output is shell-escaped and ready to paste into a terminal.',
+    },
+    content: {
+      about:
+        'Form inputs become a properly shell-escaped `curl` command. Single-quotes anything containing whitespace, escapes embedded quotes correctly, and breaks long commands across lines for readability.',
+      useCases: [
+        'Sharing an API call with a teammate without screenshotting Postman.',
+        'Documenting a webhook reproduction in a bug report.',
+        'Generating a paste-ready command for a CI step or runbook.',
+      ],
+      gotchas: [
+        'Body is sent as `--data-raw`, which doesn\'t URL-encode. Use `--data-urlencode` manually if you need that.',
+        'Generated quoting works for bash/zsh. Windows cmd users need to swap single quotes for double, or use WSL.',
+      ],
+    },
+  },
+  {
+    slug: 'json-path',
+    name: 'JSONPath Tester',
+    description: 'Query a JSON document with JSONPath ($) expressions.',
+    category: 'inspect',
+    keywords: ['jsonpath', 'jq', 'query', 'json', 'extract'],
+    Component: lazy(() => import('../tools/json-path')),
+    seo: {
+      title: 'JSONPath Tester Online — Query JSON Live',
+      description:
+        'Evaluate JSONPath expressions ($, .field, [n], [a:b], [*], ..) against any JSON document live in your browser. Great for designing transforms before piping them through jq.',
+    },
+    content: {
+      about:
+        'Compact JSONPath evaluator written from scratch. Supports root (`$`), property access, array indexing (with negative indices), slices (`[a:b]`), wildcard (`[*]`), and recursive descent (`..`).',
+      useCases: [
+        'Designing a path expression to feed into a Logstash filter or Postman test.',
+        'Pulling one nested field out of a large API response.',
+        'Verifying a path before relying on it in an alerting rule.',
+      ],
+      gotchas: [
+        'Filter expressions (`?(@.price < 30)`) and script expressions are not supported. For those, use a full jq tester.',
+        'JSONPath has multiple competing dialects — this implementation aligns with the common Stefan Goessner subset.',
+      ],
+    },
+  },
+  {
+    slug: 'slug-generator',
+    name: 'Slug Generator',
+    description: 'Convert a title to a URL-safe slug. Strips accents and stop-words.',
+    category: 'convert',
+    keywords: ['slug', 'url', 'permalink', 'seo', 'kebab', 'title'],
+    Component: lazy(() => import('../tools/slug-generator')),
+    seo: {
+      title: 'Slug Generator — URL-Safe Slugs from Titles, Online',
+      description:
+        'Convert any title or phrase into a clean URL slug. Strips accents (NFKD), normalizes whitespace, optional stop-word removal. Picks your separator (-, _, .).',
+    },
+    content: {
+      about:
+        'Normalizes Unicode (NFKD), strips diacritics, replaces ampersands with "and", collapses runs of separators, and optionally drops common English stop-words for shorter slugs.',
+      useCases: [
+        'Generating a permalink for a blog post or product.',
+        'Turning a CMS title field into a clean slug column.',
+        'Producing repo-friendly directory names from a free-text title.',
+      ],
+      gotchas: [
+        'Stop-word stripping is English only. Disable for non-English content.',
+        'URL slugs should usually be lowercase — keep "lowercase" enabled unless you have a reason not to.',
+      ],
+    },
+  },
 ];
 
 export const toolBySlug: Record<string, Tool> = Object.fromEntries(

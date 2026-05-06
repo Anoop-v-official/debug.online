@@ -7,6 +7,8 @@ import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
+import { Blog } from './pages/Blog';
+import { BlogPost } from './pages/BlogPost';
 import { CommandPalette } from './components/CommandPalette';
 import { CookieBanner } from './components/CookieBanner';
 import { useHistoryStore } from './store/history';
@@ -95,6 +97,8 @@ export function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

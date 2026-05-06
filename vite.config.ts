@@ -32,7 +32,8 @@ export default defineConfig({
             if (
               id.includes('bcryptjs') ||
               id.includes('sql-formatter') ||
-              id.includes('js-yaml')
+              id.includes('js-yaml') ||
+              id.includes('qrcode')
             ) {
               return undefined;
             }
