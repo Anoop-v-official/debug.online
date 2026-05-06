@@ -12,6 +12,26 @@ export interface PostMeta {
 
 export const posts: PostMeta[] = [
   {
+    slug: 'spf-dkim-dmarc-debug',
+    title: 'SPF, DKIM, DMARC: a practical email-debugging guide',
+    description:
+      'When transactional email lands in spam, the cause is almost always one of three TXT records. Here\'s what each one does, how they fail, and the order to debug them in.',
+    publishedAt: '2026-05-02',
+    readingTimeMin: 9,
+    tags: ['email', 'spf', 'dkim', 'dmarc', 'deliverability'],
+    Component: lazy(() => import('./posts/spf-dkim-dmarc-debug')),
+  },
+  {
+    slug: 'cron-expressions-explained',
+    title: 'Cron expressions, finally explained: Unix, Quartz, AWS',
+    description:
+      'The five fields, the four symbols, and the dialect differences between Unix cron, Quartz, and AWS EventBridge — including the day-of-month/day-of-week trap that bites everyone.',
+    publishedAt: '2026-05-01',
+    readingTimeMin: 8,
+    tags: ['cron', 'scheduling', 'aws', 'quartz'],
+    Component: lazy(() => import('./posts/cron-expressions-explained')),
+  },
+  {
     slug: 'how-dns-records-work',
     title: 'How DNS records actually work: A, AAAA, MX, TXT explained',
     description:

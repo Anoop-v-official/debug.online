@@ -5,6 +5,7 @@ import { useFavoritesStore } from '../store/favorites';
 import { useSeo } from '../lib/seo';
 import { AdSlot } from './AdSlot';
 import { ToolContentBlock } from './ToolContentBlock';
+import { RelatedTools } from './RelatedTools';
 
 const AD_SLOT = import.meta.env.VITE_ADSENSE_SLOT_TOOL ?? '';
 
@@ -75,6 +76,7 @@ export function ToolFrame({
       <div className="card p-4 sm:p-5">{children}</div>
       <AdSlot slot={AD_SLOT} />
       <ToolContentBlock content={tool.content} name={tool.name} />
+      <RelatedTools tool={tool} />
     </div>
   );
 }

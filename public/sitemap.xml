@@ -37,6 +37,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://debugdaily.online/blog/spf-dkim-dmarc-debug</loc>
+    <lastmod>2026-05-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://debugdaily.online/blog/cron-expressions-explained</loc>
+    <lastmod>2026-05-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://debugdaily.online/blog/how-dns-records-work</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>monthly</changefreq>

@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 
-const SITE_NAME = 'debug.online';
+const SITE_NAME = 'debugdaily';
 const SITE_URL = 'https://debugdaily.online';
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og.png`;
 
 interface SeoOptions {
   title: string;
   description: string;
   path?: string;
+  image?: string;
   jsonLd?: Record<string, unknown>;
 }
 
@@ -54,21 +56,24 @@ function setJsonLd(data: Record<string, unknown> | null): void {
   el.textContent = JSON.stringify(data);
 }
 
-export function useSeo({ title, description, path = '/', jsonLd }: SeoOptions): void {
+export function useSeo({ title, description, path = '/', image, jsonLd }: SeoOptions): void {
   useEffect(() => {
     const fullTitle = title.includes(SITE_NAME) ? title : `${title} — ${SITE_NAME}`;
     const url = SITE_URL + path;
+    const imageUrl = image ?? DEFAULT_OG_IMAGE;
     document.title = fullTitle;
     setMeta('meta[name="description"]', 'content', description);
     setMeta('meta[property="og:title"]', 'content', fullTitle);
     setMeta('meta[property="og:description"]', 'content', description);
     setMeta('meta[property="og:url"]', 'content', url);
     setMeta('meta[property="og:type"]', 'content', 'website');
-    setMeta('meta[name="twitter:card"]', 'content', 'summary');
+    setMeta('meta[property="og:image"]', 'content', imageUrl);
+    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:title"]', 'content', fullTitle);
     setMeta('meta[name="twitter:description"]', 'content', description);
+    setMeta('meta[name="twitter:image"]', 'content', imageUrl);
     setLink('canonical', url);
     setJsonLd(jsonLd ?? null);
     return () => setJsonLd(null);
-  }, [title, description, path, jsonLd]);
+  }, [title, description, path, image, jsonLd]);
 }
