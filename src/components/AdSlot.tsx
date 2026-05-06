@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 
 const CLIENT = import.meta.env.VITE_ADSENSE_CLIENT;
-const SCRIPT_ID = 'adsbygoogle-js';
 
 declare global {
   interface Window {
@@ -9,16 +8,12 @@ declare global {
   }
 }
 
-function ensureScript(client: string): void {
-  if (document.getElementById(SCRIPT_ID)) return;
-  const s = document.createElement('script');
-  s.id = SCRIPT_ID;
-  s.async = true;
-  s.crossOrigin = 'anonymous';
-  s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`;
-  document.head.appendChild(s);
-}
-
+/**
+ * Renders a single AdSense ad unit. Returns null if AdSense is not configured
+ * (no client ID set, or no slot passed). The script itself is loaded site-wide
+ * by <AdSenseScript/>; this component only renders the placeholder <ins> tag
+ * and pushes a request for AdSense to fill it.
+ */
 export function AdSlot({
   slot,
   layout = 'auto',
@@ -33,12 +28,11 @@ export function AdSlot({
 
   useEffect(() => {
     if (!CLIENT || !slot || pushed.current) return;
-    ensureScript(CLIENT);
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
       pushed.current = true;
     } catch {
-      /* swallow — ad blockers, offline, etc. */
+      /* swallow — ad blockers, offline, or script not yet loaded */
     }
   }, [slot]);
 

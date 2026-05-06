@@ -1,0 +1,12 @@
+# debugdaily.online ads.txt
+# Required by Google AdSense after approval.
+#
+# Once approved, REPLACE the line below with the one AdSense gives you in
+# Sites → Get code. It looks like:
+#
+#   google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+#
+# Until approved, this file exists only as a placeholder so the URL resolves
+# (Google's crawler probes /ads.txt; a 200 with a comment is harmless).
+
+google.com, pub-2081773115396308, DIRECT, f08c47fec0942fa0
