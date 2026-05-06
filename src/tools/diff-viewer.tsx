@@ -46,7 +46,17 @@ export default function DiffViewer() {
   const ops = useMemo(() => diff(a, b), [a, b]);
 
   return (
-    <ToolFrame tool={tool}>
+    <ToolFrame
+      tool={tool}
+      share={{
+        getState: () => ({ a, b }),
+        applyState: (s) => {
+          const v = s as { a?: string; b?: string };
+          if (typeof v.a === 'string') setA(v.a);
+          if (typeof v.b === 'string') setB(v.b);
+        },
+      }}
+    >
       <SplitPane
         leftLabel="A"
         rightLabel="B"

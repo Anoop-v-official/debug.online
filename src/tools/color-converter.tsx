@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { toolBySlug } from '../lib/tools';
+import { consumeSmartPaste } from '../lib/smartPaste';
 
 const tool = toolBySlug['color-converter']!;
 
@@ -93,10 +94,25 @@ function hslToRgb(h: number, s: number, l: number): RGB {
 
 export default function ColorConverter() {
   const [input, setInput] = useState('#00ff88');
+
+  useEffect(() => {
+    const v = consumeSmartPaste('color-converter');
+    if (v) setInput(v);
+  }, []);
+
   const parsed = useMemo(() => parse(input), [input]);
 
   return (
-    <ToolFrame tool={tool}>
+    <ToolFrame
+      tool={tool}
+      share={{
+        getState: () => ({ input }),
+        applyState: (s) => {
+          const v = s as { input?: string };
+          if (typeof v.input === 'string') setInput(v.input);
+        },
+      }}
+    >
       <div className="space-y-4">
         <input
           value={input}

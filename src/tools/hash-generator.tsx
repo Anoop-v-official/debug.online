@@ -38,6 +38,14 @@ export default function HashGenerator() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input, algo }),
+        applyState: (s) => {
+          const v = s as { input?: string; algo?: Algo };
+          if (typeof v.input === 'string') setInput(v.input);
+          if (v.algo && (ALGOS as readonly string[]).includes(v.algo)) setAlgo(v.algo);
+        },
+      }}
       actions={
         <>
           <select

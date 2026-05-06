@@ -39,6 +39,14 @@ export default function Base64() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input, mode }),
+        applyState: (s) => {
+          const v = s as { input?: string; mode?: 'encode' | 'decode' };
+          if (typeof v.input === 'string') setInput(v.input);
+          if (v.mode === 'encode' || v.mode === 'decode') setMode(v.mode);
+        },
+      }}
       actions={
         <>
           <div className="inline-flex rounded-md border border-border overflow-hidden">

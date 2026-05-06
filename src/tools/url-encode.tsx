@@ -27,6 +27,14 @@ export default function UrlEncode() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input, mode }),
+        applyState: (s) => {
+          const v = s as { input?: string; mode?: 'encode' | 'decode' };
+          if (typeof v.input === 'string') setInput(v.input);
+          if (v.mode === 'encode' || v.mode === 'decode') setMode(v.mode);
+        },
+      }}
       actions={
         <>
           <select

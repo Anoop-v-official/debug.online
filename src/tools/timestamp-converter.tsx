@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { toolBySlug } from '../lib/tools';
+import { consumeSmartPaste } from '../lib/smartPaste';
 
 const tool = toolBySlug['timestamp-converter']!;
 
@@ -19,11 +20,24 @@ function parseInput(s: string): Date | null {
 
 export default function TimestampConverter() {
   const [input, setInput] = useState(String(Math.floor(Date.now() / 1000)));
+
+  useEffect(() => {
+    const v = consumeSmartPaste('timestamp-converter');
+    if (v) setInput(v);
+  }, []);
+
   const date = useMemo(() => parseInput(input), [input]);
 
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input }),
+        applyState: (s) => {
+          const v = s as { input?: string };
+          if (typeof v.input === 'string') setInput(v.input);
+        },
+      }}
       actions={
         <button
           type="button"

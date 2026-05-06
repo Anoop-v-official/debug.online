@@ -83,6 +83,14 @@ export default function JsonToTs() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input, name }),
+        applyState: (s) => {
+          const v = s as { input?: string; name?: string };
+          if (typeof v.input === 'string') setInput(v.input);
+          if (typeof v.name === 'string') setName(v.name);
+        },
+      }}
       actions={
         <>
           <input

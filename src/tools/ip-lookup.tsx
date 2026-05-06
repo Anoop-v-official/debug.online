@@ -3,6 +3,7 @@ import { ToolFrame } from '../components/ToolFrame';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
 import { api } from '../lib/apiBase';
+import { consumeSmartPaste } from '../lib/smartPaste';
 
 const tool = toolBySlug['ip-lookup']!;
 
@@ -42,8 +43,17 @@ export default function IpLookup() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    // Auto-detect on first mount
+    const pasted = consumeSmartPaste('ip-lookup');
     setBusy(true);
+    if (pasted) {
+      setInput(pasted);
+      fetchInfo(pasted)
+        .then(setData)
+        .catch((e) => setErr(e instanceof Error ? e.message : 'lookup failed'))
+        .finally(() => setBusy(false));
+      return;
+    }
+    // Auto-detect on first mount
     fetchInfo('')
       .then(setData)
       .catch((e) => setErr(e instanceof Error ? e.message : 'lookup failed'))

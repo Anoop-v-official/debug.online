@@ -35,7 +35,18 @@ export default function RegexTester() {
   }, [pattern, flags, text]);
 
   return (
-    <ToolFrame tool={tool}>
+    <ToolFrame
+      tool={tool}
+      share={{
+        getState: () => ({ pattern, flags, text }),
+        applyState: (s) => {
+          const v = s as { pattern?: string; flags?: string; text?: string };
+          if (typeof v.pattern === 'string') setPattern(v.pattern);
+          if (typeof v.flags === 'string') setFlags(v.flags.replace(/[^gimsuy]/g, ''));
+          if (typeof v.text === 'string') setText(v.text);
+        },
+      }}
+    >
       <div className="space-y-4">
         <div className="flex items-center gap-2 font-mono text-sm">
           <span className="text-subtle">/</span>

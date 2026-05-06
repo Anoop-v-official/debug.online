@@ -18,6 +18,8 @@ import {
 import { useSeo } from '../lib/seo';
 import { toolBySlug } from '../lib/tools';
 import { useFavoritesStore } from '../store/favorites';
+import { sniff, type SniffResult } from '../lib/sniff';
+import { setSmartPaste } from '../lib/smartPaste';
 
 type RoleCategory = 'backend' | 'frontend' | 'devops' | 'sysadmin' | 'security';
 type Filter = 'all' | 'trending' | 'new' | 'favorites';
@@ -833,6 +835,22 @@ export function Home({ onOpenPalette }: HomeProps) {
     setFocusIdx(0);
   }, [filter, query]);
 
+  // Smart paste: detect when the search input contains a recognizable
+  // payload (JWT, JSON, color, timestamp, URL, IP, domain, UUID) and route
+  // it directly to the matching tool with the value pre-filled.
+  const smartMatch: SniffResult | null = useMemo(() => {
+    if (!query.trim()) return null;
+    const result = sniff(query);
+    if (!result) return null;
+    if (!toolBySlug[result.slug]) return null;
+    return result;
+  }, [query]);
+
+  function openSmart(match: SniffResult) {
+    setSmartPaste(match.slug, match.value);
+    navigate(`/tools/${match.slug}`);
+  }
+
   function openTool(tool: MarketingTool) {
     if (tool.existingSlug && toolBySlug[tool.existingSlug]) {
       navigate(`/tools/${tool.existingSlug}`);
@@ -847,6 +865,12 @@ export function Home({ onOpenPalette }: HomeProps) {
       e.preventDefault();
       setFocusIdx((i) => Math.max(0, i - 1));
     } else if (e.key === 'Enter') {
+      // Smart paste wins over fuzzy match.
+      if (smartMatch) {
+        e.preventDefault();
+        openSmart(smartMatch);
+        return;
+      }
       const t = filtered[focusIdx];
       if (t) openTool(t);
     } else if (e.key === 'Escape') {
@@ -874,6 +898,10 @@ export function Home({ onOpenPalette }: HomeProps) {
           typing={typing}
           openPalette={onOpenPalette}
         />
+
+        {smartMatch ? (
+          <SmartPasteBanner match={smartMatch} onOpen={() => openSmart(smartMatch)} />
+        ) : null}
 
         <FilterChips active={filter} setActive={setFilter} />
 
@@ -969,6 +997,53 @@ function Hero({ searchInputRef, query, setQuery, onSearchKey, typing, openPalett
 }
 
 /* ─────────────────────────────  FILTER CHIPS  ───────────────────────────── */
+
+/* ─────────────────────────────  SMART PASTE BANNER  ───────────────────────────── */
+
+function SmartPasteBanner({
+  match,
+  onOpen,
+}: {
+  match: SniffResult;
+  onOpen: () => void;
+}) {
+  const tool = toolBySlug[match.slug];
+  if (!tool) return null;
+  const article = /^[aeiou]/i.test(match.label) ? 'an' : 'a';
+  const preview =
+    match.value.length > 80 ? match.value.slice(0, 80) + '…' : match.value;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Open in ${tool.name}`}
+      className="group w-full text-left mb-6 rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors p-4 flex items-center justify-between gap-3"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <span
+          aria-hidden
+          className="text-accent text-2xl font-mono leading-none shrink-0"
+        >
+          ↳
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm text-text">
+            Looks like {article}{' '}
+            <span className="text-accent font-medium">{match.label}</span>. Open in{' '}
+            <span className="font-mono">{tool.name}</span>?
+          </div>
+          <div className="text-2xs text-subtle font-mono mt-0.5 truncate">
+            {preview}
+          </div>
+        </div>
+      </div>
+      <span className="hidden sm:flex items-center gap-2 text-xs font-mono text-accent shrink-0">
+        Open
+        <span className="kbd">↵</span>
+      </span>
+    </button>
+  );
+}
 
 const FILTER_META: Record<Filter, { label: string; icon: React.ReactNode }> = {
   all: { label: 'All Tools', icon: <span aria-hidden>◇</span> },

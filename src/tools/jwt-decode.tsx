@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
+import { consumeSmartPaste } from '../lib/smartPaste';
 
 const tool = toolBySlug['jwt-decode']!;
 
@@ -49,10 +50,25 @@ const SAMPLE =
 
 export default function JwtDecode() {
   const [input, setInput] = useState(SAMPLE);
+
+  useEffect(() => {
+    const v = consumeSmartPaste('jwt-decode');
+    if (v) setInput(v);
+  }, []);
+
   const result = useMemo(() => decode(input), [input]);
 
   return (
-    <ToolFrame tool={tool}>
+    <ToolFrame
+      tool={tool}
+      share={{
+        getState: () => ({ input }),
+        applyState: (s) => {
+          const v = s as { input?: string };
+          if (typeof v.input === 'string') setInput(v.input);
+        },
+      }}
+    >
       <div className="space-y-4">
         <textarea
           value={input}

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { toolBySlug } from '../lib/tools';
+import { consumeSmartPaste } from '../lib/smartPaste';
 
 const tool = toolBySlug['url-parser']!;
 
@@ -8,6 +9,12 @@ export default function UrlParser() {
   const [input, setInput] = useState(
     'https://api.example.com:8443/v1/users?role=admin&limit=10#section-2',
   );
+
+  useEffect(() => {
+    const v = consumeSmartPaste('url-parser');
+    if (v) setInput(v);
+  }, []);
+
   const result = useMemo(() => {
     try {
       const u = new URL(input);
@@ -18,7 +25,16 @@ export default function UrlParser() {
   }, [input]);
 
   return (
-    <ToolFrame tool={tool}>
+    <ToolFrame
+      tool={tool}
+      share={{
+        getState: () => ({ input }),
+        applyState: (s) => {
+          const v = s as { input?: string };
+          if (typeof v.input === 'string') setInput(v.input);
+        },
+      }}
+    >
       <div className="space-y-3">
         <input
           value={input}

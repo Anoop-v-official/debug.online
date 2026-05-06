@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
 import { utf8ByteSize, formatBytes } from '../lib/byteSize';
+import { consumeSmartPaste } from '../lib/smartPaste';
 
 const tool = toolBySlug['json-format']!;
 
@@ -13,6 +14,11 @@ const SAMPLE = `{"id":42,"user":{"name":"Ada","admin":true},"tags":["a","b"]}`;
 export default function JsonFormat() {
   const [input, setInput] = useState(SAMPLE);
   const [indent, setIndent] = useState<2 | 4 | 0>(2);
+
+  useEffect(() => {
+    const v = consumeSmartPaste('json-format');
+    if (v) setInput(v);
+  }, []);
 
   const result = useMemo(() => {
     if (!input.trim()) return { ok: true, text: '' };
@@ -32,6 +38,14 @@ export default function JsonFormat() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input, indent }),
+        applyState: (s) => {
+          const v = s as { input?: string; indent?: 0 | 2 | 4 };
+          if (typeof v.input === 'string') setInput(v.input);
+          if (v.indent === 0 || v.indent === 2 || v.indent === 4) setIndent(v.indent);
+        },
+      }}
       actions={
         <>
           <select

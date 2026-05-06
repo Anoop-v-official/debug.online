@@ -62,7 +62,16 @@ export default function CronParser() {
   const description = useMemo(() => describe(input), [input]);
 
   return (
-    <ToolFrame tool={tool}>
+    <ToolFrame
+      tool={tool}
+      share={{
+        getState: () => ({ input }),
+        applyState: (s) => {
+          const v = s as { input?: string };
+          if (typeof v.input === 'string') setInput(v.input);
+        },
+      }}
+    >
       <div className="space-y-3">
         <input
           value={input}

@@ -42,6 +42,14 @@ export default function YamlValidator() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input, out }),
+        applyState: (s) => {
+          const v = s as { input?: string; out?: 'json' | 'yaml' };
+          if (typeof v.input === 'string') setInput(v.input);
+          if (v.out === 'json' || v.out === 'yaml') setOut(v.out);
+        },
+      }}
       actions={
         <>
           <select

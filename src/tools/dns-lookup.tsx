@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ToolFrame } from '../components/ToolFrame';
 import { InsightPanel } from '../components/InsightPanel';
 import { toolBySlug } from '../lib/tools';
 import { dnsLookup, type DnsAnswer } from '../lib/dnsClient';
+import { consumeSmartPaste } from '../lib/smartPaste';
 
 const tool = toolBySlug['dns-lookup']!;
 
@@ -17,6 +18,18 @@ export default function DnsLookup() {
   const [data, setData] = useState<Answer | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const pasted = consumeSmartPaste('dns-lookup');
+    if (!pasted) return;
+    setHost(pasted);
+    setBusy(true);
+    setErr(null);
+    dnsLookup(pasted, 'A')
+      .then(setData)
+      .catch((e) => setErr(e instanceof Error ? e.message : 'lookup failed'))
+      .finally(() => setBusy(false));
+  }, []);
 
   async function go(e?: React.FormEvent) {
     e?.preventDefault();

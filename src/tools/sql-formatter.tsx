@@ -44,6 +44,21 @@ export default function SqlFormatter() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ input, dialect, tab, uppercase }),
+        applyState: (s) => {
+          const v = s as {
+            input?: string;
+            dialect?: Dialect;
+            tab?: number;
+            uppercase?: boolean;
+          };
+          if (typeof v.input === 'string') setInput(v.input);
+          if (v.dialect && (DIALECTS as readonly string[]).includes(v.dialect)) setDialect(v.dialect);
+          if (typeof v.tab === 'number') setTab(v.tab);
+          if (typeof v.uppercase === 'boolean') setUppercase(v.uppercase);
+        },
+      }}
       actions={
         <>
           <select

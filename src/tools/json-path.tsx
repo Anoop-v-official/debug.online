@@ -155,6 +155,14 @@ export default function JsonPath() {
   return (
     <ToolFrame
       tool={tool}
+      share={{
+        getState: () => ({ json, path }),
+        applyState: (s) => {
+          const v = s as { json?: string; path?: string };
+          if (typeof v.json === 'string') setJson(v.json);
+          if (typeof v.path === 'string') setPath(v.path);
+        },
+      }}
       actions={
         <CopyButton text={result.ok ? JSON.stringify(result.value, null, 2) : ''} />
       }
