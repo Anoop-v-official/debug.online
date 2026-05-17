@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, MoonStar, Search, X } from 'lucide-react';
+import { LiveUsers } from './LiveUsers';
 
 interface HeaderProps {
   onOpenPalette: () => void;
@@ -57,6 +58,8 @@ export function Header({ onOpenPalette }: HeaderProps) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <LiveUsers />
+
           <button
             type="button"
             onClick={onOpenPalette}
