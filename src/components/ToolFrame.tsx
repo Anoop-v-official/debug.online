@@ -73,13 +73,34 @@ export function ToolFrame({
   const jsonLd = useMemo(
     () => ({
       '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: tool.name,
-      description: tool.seo.description,
-      applicationCategory: 'DeveloperApplication',
-      operatingSystem: 'Any (browser)',
-      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-      url: `https://debugdaily.online/tools/${tool.slug}`,
+      '@graph': [
+        {
+          '@type': 'SoftwareApplication',
+          name: tool.name,
+          description: tool.seo.description,
+          applicationCategory: 'DeveloperApplication',
+          operatingSystem: 'Any (browser)',
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+          url: `https://debugdaily.online/tools/${tool.slug}`,
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'debugdaily',
+              item: 'https://debugdaily.online/',
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: tool.name,
+              item: `https://debugdaily.online/tools/${tool.slug}`,
+            },
+          ],
+        },
+      ],
     }),
     [tool],
   );
@@ -131,7 +152,7 @@ export function ToolFrame({
       </div>
       <div className="card p-4 sm:p-5">{children}</div>
       <AdSlot slot={AD_SLOT} />
-      <ToolContentBlock content={tool.content} name={tool.name} />
+      <ToolContentBlock tool={tool} />
       <RelatedTools tool={tool} />
     </div>
   );

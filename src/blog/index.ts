@@ -66,3 +66,39 @@ export const posts: PostMeta[] = [
 export const postBySlug: Record<string, PostMeta> = Object.fromEntries(
   posts.map((p) => [p.slug, p]),
 );
+
+/**
+ * Find blog posts relevant to a given set of keywords. Used by tool pages to
+ * suggest deeper reading (e.g., DNS Lookup → "How DNS records work").
+ * Returns at most `limit` posts, sorted by relevance.
+ */
+export function relatedPosts(keywords: string[], limit = 3): PostMeta[] {
+  const lowerKeywords = new Set(keywords.map((k) => k.toLowerCase()));
+  return posts
+    .map((post) => {
+      let score = 0;
+      const hay = (post.title + ' ' + post.description + ' ' + post.tags.join(' ')).toLowerCase();
+      for (const kw of lowerKeywords) {
+        if (post.tags.some((t) => t.toLowerCase() === kw)) score += 5;
+        else if (hay.includes(kw)) score += 1;
+      }
+      return { post, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((x) => x.post);
+}
+
+export function relatedPostsByTags(tags: string[], excludeSlug?: string, limit = 3): PostMeta[] {
+  return posts
+    .filter((p) => p.slug !== excludeSlug)
+    .map((post) => {
+      const overlap = post.tags.filter((t) => tags.includes(t)).length;
+      return { post, score: overlap };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((x) => x.post);
+}

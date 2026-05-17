@@ -1519,6 +1519,502 @@ export const tools: Tool[] = [
       ],
     },
   },
+  {
+    slug: 'chmod-calculator',
+    name: 'Chmod Calculator',
+    description: 'Toggle Unix permissions; get the octal and symbolic forms.',
+    category: 'network',
+    keywords: ['chmod', 'permissions', 'unix', 'octal', 'symbolic', 'rwx'],
+    Component: lazy(() => import('../tools/chmod-calculator')),
+    seo: {
+      title: 'Chmod Calculator — Octal & Symbolic Unix Permissions Online',
+      description:
+        'Pick read / write / execute for owner, group and other; get the octal value (e.g. 755) and symbolic form (rwxr-xr-x) plus the chmod command to paste.',
+    },
+    content: {
+      about:
+        'Click the checkboxes for read/write/execute across owner/group/other, or type the octal directly. The tool shows both the octal value and the human-readable symbolic form, plus the full chmod command.',
+      useCases: [
+        'Remembering why 755 is "executable for owner, readable for everyone else".',
+        'Setting up a deploy script that needs specific file modes.',
+        'Translating between rwxr-xr-x and 755 in either direction.',
+      ],
+      gotchas: [
+        'Setuid (4xxx), setgid (2xxx), and sticky bit (1xxx) aren\'t exposed in the UI — add them manually if needed (e.g. 4755).',
+      ],
+    },
+  },
+  {
+    slug: 'basic-auth-generator',
+    name: 'Basic Auth Header',
+    description: 'Generate an HTTP Basic Authorization header from a username and password.',
+    category: 'generate',
+    keywords: ['basic-auth', 'authorization', 'http', 'header', 'curl'],
+    Component: lazy(() => import('../tools/basic-auth-generator')),
+    seo: {
+      title: 'HTTP Basic Auth Header Generator — Online',
+      description:
+        'Generate an Authorization: Basic <base64> header from any username and password. Includes the equivalent curl -u command. Encoding happens entirely in your browser.',
+    },
+    content: {
+      about:
+        'Base64-encodes `user:password` and wraps it in the standard `Authorization: Basic` header. Outputs both the full header line and the curl shorthand.',
+      useCases: [
+        'Documenting an API call in a runbook or PR description.',
+        'Verifying what Postman is actually sending.',
+        'Generating a test header for a CI step.',
+      ],
+      gotchas: [
+        'Basic auth is base64, not encryption. Anyone with the header can read the password. Use only over HTTPS.',
+        'Bcrypt-hashed passwords on the server are fine; Basic still sends the plaintext over the wire to be compared.',
+      ],
+    },
+  },
+  {
+    slug: 'mime-types',
+    name: 'MIME Type Lookup',
+    description: 'Look up MIME types by file extension or search by content type.',
+    category: 'inspect',
+    keywords: ['mime', 'content-type', 'extension', 'media-type'],
+    Component: lazy(() => import('../tools/mime-types')),
+    seo: {
+      title: 'MIME Type Lookup — Search by Extension or Content-Type',
+      description:
+        'Searchable reference of common file extensions and their MIME / Content-Type values. Covers text, image, audio, video, font, and Office document types.',
+    },
+    content: {
+      about:
+        'Filterable list of the file extensions and MIME types you actually encounter. Search either direction — by `.webp` or by `image/webp`.',
+      useCases: [
+        'Setting the right Content-Type on an upload endpoint.',
+        'Debugging a browser refusing to render a file.',
+        'Writing an allow-list of accepted upload types for your form.',
+      ],
+    },
+  },
+  {
+    slug: 'json-to-csv',
+    name: 'JSON to CSV',
+    description: 'Convert a JSON array of objects to CSV with flatten + delimiter options.',
+    category: 'convert',
+    keywords: ['json', 'csv', 'convert', 'flatten', 'spreadsheet'],
+    Component: lazy(() => import('../tools/json-to-csv')),
+    seo: {
+      title: 'JSON to CSV Converter — Flatten Nested, Online',
+      description:
+        'Paste a JSON array of objects; get clean CSV with proper escaping, your choice of delimiter, and optional nested-object flattening. Pure browser.',
+    },
+    content: {
+      about:
+        'Inspects the union of keys across every object, optionally flattens nested objects with dot notation, and emits CSV with RFC 4180 quoting.',
+      useCases: [
+        'Importing an API response into a spreadsheet.',
+        'Preparing data for `pandas.read_csv` or similar.',
+        'Quickly diffing a JSON dataset with column-by-column eyes.',
+      ],
+      gotchas: [
+        'Nested arrays inside objects become JSON-string cells. For tabular nested data, pre-process first.',
+      ],
+    },
+  },
+  {
+    slug: 'json-to-yaml',
+    name: 'JSON to YAML',
+    description: 'Convert JSON to clean YAML with proper indentation.',
+    category: 'convert',
+    keywords: ['json', 'yaml', 'convert', 'kubernetes', 'config'],
+    Component: lazy(() => import('../tools/json-to-yaml')),
+    seo: {
+      title: 'JSON to YAML Converter — Online, K8s & Compose Friendly',
+      description:
+        'Paste JSON; get well-formatted YAML with your chosen indent. Useful for converting JSON snippets into Kubernetes manifests, Docker Compose files, or GitHub Actions workflows.',
+    },
+    content: {
+      about:
+        'Round-trips JSON through js-yaml to produce clean YAML output. The inverse of our existing YAML Validator, which handles YAML → JSON.',
+      useCases: [
+        'Translating a JSON config into a Kubernetes manifest.',
+        'Migrating from a JSON-based config to YAML.',
+        'Quickly diffing two configs in YAML form (more readable than JSON for large nested objects).',
+      ],
+    },
+  },
+  {
+    slug: 'xml-formatter',
+    name: 'XML Formatter',
+    description: 'Pretty-print or minify XML; validates structure as it goes.',
+    category: 'format',
+    keywords: ['xml', 'format', 'pretty', 'minify', 'beautify'],
+    Component: lazy(() => import('../tools/xml-formatter')),
+    seo: {
+      title: 'XML Formatter & Validator Online — Pretty-Print or Minify',
+      description:
+        'Paste XML, get a clean indented version with proper nesting. Toggle minify mode for transport. Validates structure via the browser\'s built-in DOMParser.',
+    },
+    content: {
+      about:
+        'Tokenizes the XML into tags + text and re-indents based on depth. Validates the document by parsing it with the browser\'s DOMParser — invalid XML produces a clear error.',
+      useCases: [
+        'Reading SOAP envelopes from a server log.',
+        'Inspecting an Android `strings.xml` or `AndroidManifest.xml`.',
+        'Diffing two RSS feeds for changes.',
+      ],
+      gotchas: [
+        'CDATA blocks and embedded XML processing instructions are preserved verbatim, not deeply re-indented.',
+      ],
+    },
+  },
+  {
+    slug: 'hmac-generator',
+    name: 'HMAC Generator',
+    description: 'Generate HMAC signatures (SHA-1/256/384/512) for webhook verification.',
+    category: 'generate',
+    keywords: ['hmac', 'sign', 'webhook', 'sha256', 'crypto', 'stripe', 'github'],
+    Component: lazy(() => import('../tools/hmac-generator')),
+    seo: {
+      title: 'HMAC Generator Online — SHA-1, SHA-256, SHA-384, SHA-512',
+      description:
+        'Generate HMAC signatures with WebCrypto. Pick the algorithm, paste a secret and a message, get hex and base64 digests. Used by Stripe, GitHub, Slack and most webhook providers.',
+    },
+    content: {
+      about:
+        'Uses WebCrypto\'s HMAC implementation. Outputs both hex (the standard for header signatures) and base64 (used by some providers).',
+      useCases: [
+        'Reproducing the signature a webhook provider sent you, to verify their docs match reality.',
+        'Generating a test signature for your own webhook implementation.',
+        'Debugging a "signature mismatch" error by comparing computed vs. received hex.',
+      ],
+      gotchas: [
+        'HMAC is sensitive to the exact bytes of the secret and message. Whitespace, trailing newlines, and encoding all matter.',
+        'Many providers sign the raw request body, not a parsed/re-serialized version. Capture the original bytes when verifying.',
+      ],
+    },
+  },
+  {
+    slug: 'totp-generator',
+    name: 'TOTP / 2FA Code Generator',
+    description: 'Generate or validate TOTP codes (Google Authenticator style).',
+    category: 'generate',
+    keywords: ['totp', '2fa', 'otp', 'authenticator', 'google', 'rfc6238'],
+    Component: lazy(() => import('../tools/totp-generator')),
+    seo: {
+      title: 'TOTP Code Generator (2FA) Online — RFC 6238',
+      description:
+        'Generate Time-based One-Time Passwords for any base32 secret. Pick algorithm (SHA-1/256/512), digits (6/7/8), and period. Useful for testing 2FA flows.',
+    },
+    content: {
+      about:
+        'Full RFC 6238 TOTP implementation in WebCrypto. Pulls the current Unix time, advances the counter, and computes HMAC-SHA{1,256,512} on the secret. Shows the current code and the upcoming one with a countdown bar.',
+      useCases: [
+        'Testing 2FA login flows during development without an authenticator app.',
+        'Verifying a secret a provider gave you actually generates the codes they expect.',
+        'Building a one-off CLI / CI tool that needs an OTP.',
+      ],
+      gotchas: [
+        'Secret must be base32. Most providers show it explicitly; some embed it in an otpauth:// QR.',
+        'The default for Google Authenticator, 1Password, Authy, Bitwarden is SHA-1 + 6 digits + 30s. Don\'t change these unless your provider requires it.',
+      ],
+    },
+  },
+  {
+    slug: 'iban-validator',
+    name: 'IBAN Validator',
+    description: 'Validate an IBAN with mod-97 check and country-length rules.',
+    category: 'inspect',
+    keywords: ['iban', 'bank', 'banking', 'validate', 'mod97', 'sepa'],
+    Component: lazy(() => import('../tools/iban-validator')),
+    seo: {
+      title: 'IBAN Validator Online — Mod-97 Check, 70+ Countries',
+      description:
+        'Validate International Bank Account Numbers (IBANs) using the standard mod-97 checksum and country-specific length rules. Supports all 75 SEPA + non-SEPA IBAN countries.',
+    },
+    content: {
+      about:
+        'Validates structure (country code, expected length) and computes the ISO 13616 mod-97 checksum. Returns country, check digits, and BBAN (basic bank account number) on success.',
+      useCases: [
+        'Validating user input on a payment or invoicing form.',
+        'Sanity-checking a partner\'s bank details before issuing a payout.',
+        'Cleaning up an imported customer list with malformed IBAN values.',
+      ],
+      gotchas: [
+        'A passing checksum means the IBAN is structurally valid — NOT that the account exists or is open. That requires bank-side verification.',
+        'Some countries use multiple IBAN formats; this tool uses the standard ISO 13616 lengths.',
+      ],
+    },
+  },
+  {
+    slug: 'docker-run-to-compose',
+    name: 'docker run → docker-compose',
+    description: 'Convert a `docker run` command into an equivalent docker-compose service.',
+    category: 'convert',
+    keywords: ['docker', 'docker-compose', 'convert', 'yaml', 'container'],
+    Component: lazy(() => import('../tools/docker-run-to-compose')),
+    seo: {
+      title: 'docker run → docker-compose Converter Online',
+      description:
+        'Paste a `docker run` command; get the equivalent docker-compose service block. Supports -p, -v, -e, --name, --restart, --network, --cap-add, --link and more.',
+    },
+    content: {
+      about:
+        'Tokenizes a `docker run` command, maps each flag to its docker-compose equivalent, and emits valid Compose YAML. Handles quoted values and line continuations.',
+      useCases: [
+        'Migrating an ad-hoc Docker run line from a README into a maintainable compose file.',
+        'Documenting a complex container setup more readably.',
+        'Onboarding a service into a multi-container app.',
+      ],
+      gotchas: [
+        'Unknown flags are skipped — review the output before deploying.',
+        'Compose has features (depends_on health checks, build contexts) that have no `docker run` equivalent. Add those by hand.',
+      ],
+    },
+  },
+  {
+    slug: 'rot13',
+    name: 'ROT13 / Caesar Cipher',
+    description: 'Encode or decode text with a letter rotation cipher.',
+    category: 'encode',
+    keywords: ['rot13', 'caesar', 'cipher', 'rotate', 'obfuscate'],
+    Component: lazy(() => import('../tools/rot13')),
+    seo: {
+      title: 'ROT13 / Caesar Cipher — Online Text Encoder & Decoder',
+      description:
+        'Rotate letters by 13 (ROT13, the classic) or any custom shift (Caesar cipher). Live conversion as you type. Non-letter characters are preserved.',
+    },
+    content: {
+      about:
+        'Pure letter rotation. ROT13 (shift 13) is its own inverse, so a single click both encodes and decodes — a fun curiosity, and useful for lightly obfuscating spoilers or solutions.',
+      useCases: [
+        'Hiding spoilers in a forum post.',
+        'Quick light obfuscation that\'s trivially reversible.',
+        'Solving puzzles or CTFs that use shift ciphers.',
+      ],
+      gotchas: [
+        'Not real encryption. Anyone can reverse it in a second.',
+      ],
+    },
+  },
+  {
+    slug: 'roman-numerals',
+    name: 'Roman Numeral Converter',
+    description: 'Convert numbers to Roman numerals and back.',
+    category: 'convert',
+    keywords: ['roman', 'numeral', 'convert', 'i', 'v', 'x', 'l', 'c', 'd', 'm'],
+    Component: lazy(() => import('../tools/roman-numerals')),
+    seo: {
+      title: 'Roman Numeral Converter Online — Number ↔ Roman',
+      description:
+        'Convert any integer (1–3999) to its Roman numeral, or paste a Roman numeral to get its integer value. Round-trip validated, subtractive notation.',
+    },
+    content: {
+      about:
+        'Greedy conversion using the standard subtractive pairs (CM, CD, XC, XL, IX, IV). Validates Roman input by round-tripping back to a number and comparing.',
+      useCases: [
+        'Translating copyright years or movie sequels.',
+        'Writing chapter numbers in a doc.',
+        'Solving a crossword or trivia question.',
+      ],
+      gotchas: [
+        'Standard Romans top out at 3999 (MMMCMXCIX). Larger values existed historically but had no standard form.',
+      ],
+    },
+  },
+  {
+    slug: 'nato-phonetic',
+    name: 'NATO Phonetic Alphabet',
+    description: 'Spell out text in the ICAO/NATO phonetic alphabet.',
+    category: 'convert',
+    keywords: ['nato', 'phonetic', 'alphabet', 'alpha', 'bravo', 'spelling'],
+    Component: lazy(() => import('../tools/nato-phonetic')),
+    seo: {
+      title: 'NATO Phonetic Alphabet Converter — Text to Alpha/Bravo Online',
+      description:
+        'Translate any text into the ICAO/NATO phonetic alphabet: A → Alpha, B → Bravo, … Useful for reading codes or passwords aloud over a noisy line.',
+    },
+    content: {
+      about:
+        'Standard NATO phonetic alphabet (used by airlines, military, emergency services). Letters become words, digits speak their English number, spaces are explicit.',
+      useCases: [
+        'Reading a tracking number or activation code over the phone.',
+        'Spelling a password to a colleague without confusion between "M" and "N".',
+        'Writing operational docs that mix typed and spoken communication.',
+      ],
+    },
+  },
+  {
+    slug: 'list-converter',
+    name: 'List Converter',
+    description: 'Convert between newline, comma, JSON array, SQL IN list and more.',
+    category: 'convert',
+    keywords: ['list', 'csv', 'json', 'sql', 'convert', 'array'],
+    Component: lazy(() => import('../tools/list-converter')),
+    seo: {
+      title: 'List Converter Online — Newline, CSV, JSON Array, SQL IN',
+      description:
+        'Paste a list in any format (newline, comma, tab, JSON array) and convert to any other. Optional unique / sort / trim. Outputs a JSON array, SQL IN clause, or your choice of delimiter.',
+    },
+    content: {
+      about:
+        'Auto-detects the input separator (newlines, commas, semicolons, pipes, tabs, or JSON array) and re-emits in your chosen format. Optionally deduplicates, sorts, and trims.',
+      useCases: [
+        'Building a `WHERE id IN (\'a\', \'b\', \'c\')` clause from a copy-pasted list.',
+        'Cleaning and deduplicating a list of emails from a spreadsheet column.',
+        'Converting a textarea-of-names into a JSON array for an API call.',
+      ],
+    },
+  },
+  {
+    slug: 'email-normalizer',
+    name: 'Email Normalizer',
+    description: 'Canonical form of an email — strip Gmail dots, +tag aliases, lowercase.',
+    category: 'inspect',
+    keywords: ['email', 'normalize', 'canonical', 'gmail', 'alias', 'dedupe'],
+    Component: lazy(() => import('../tools/email-normalizer')),
+    seo: {
+      title: 'Email Normalizer — Strip Gmail Dots, Plus-Tags, Online',
+      description:
+        'Reduce an email to its canonical form: lowercase, drop +tag aliases, remove Gmail dots, map googlemail.com → gmail.com. Useful for deduplicating signup lists.',
+    },
+    content: {
+      about:
+        'Applies the well-known canonicalization rules for major providers: Gmail strips dots in the local part and treats googlemail.com identically; many providers (Fastmail, Proton, iCloud, Outlook) honor +tag aliases.',
+      useCases: [
+        'Deduplicating a signup or subscriber list where one human signed up twice.',
+        'Detecting abuse / fraud signups via plus-tag rotation.',
+        'Computing a stable hash of "is this the same mailbox?" for analytics.',
+      ],
+      gotchas: [
+        'Outside the well-known providers, dots in the local part ARE significant. Don\'t apply Gmail rules to arbitrary domains.',
+      ],
+    },
+  },
+  {
+    slug: 'safelink-decoder',
+    name: 'Safelink Decoder',
+    description: 'Extract the real URL from Outlook, Mimecast, Proofpoint and other wrappers.',
+    category: 'inspect',
+    keywords: ['safelink', 'outlook', 'mimecast', 'proofpoint', 'redirect', 'url', 'decoder'],
+    Component: lazy(() => import('../tools/safelink-decoder')),
+    seo: {
+      title: 'Safelink Decoder Online — Outlook, Mimecast, Proofpoint URL Unwrap',
+      description:
+        'Paste a wrapped URL (Microsoft Safe Links, Mimecast, Proofpoint URL Defense, Google, LinkedIn) and extract the real destination. Pure browser, no server lookup.',
+    },
+    content: {
+      about:
+        'Matches common URL-wrapping patterns from enterprise email security and ad/redirect trackers, extracts the underlying URL, and URL-decodes it.',
+      useCases: [
+        'Checking where a link in a corporate email actually goes before clicking.',
+        'Cleaning a URL someone shared via an ad-tracked redirect.',
+        'Auditing tracking parameters in a campaign\'s outbound links.',
+      ],
+      gotchas: [
+        'Short-link services (t.co, bit.ly, lnkd.in) need a server-side HEAD request to resolve. This tool only handles statically-decodable wrappers.',
+      ],
+    },
+  },
+  {
+    slug: 'wifi-qr',
+    name: 'Wi-Fi QR Code',
+    description: 'Generate a QR code that auto-joins a Wi-Fi network when scanned.',
+    category: 'generate',
+    keywords: ['wifi', 'qr', 'wpa', 'guest', 'network', 'scan'],
+    Component: lazy(() => import('../tools/wifi-qr')),
+    seo: {
+      title: 'Wi-Fi QR Code Generator — Auto-Join Network Online',
+      description:
+        'Create a QR code that joins a Wi-Fi network automatically. iOS Camera and Android scan it natively. Outputs PNG and SVG. Password never leaves your browser.',
+    },
+    content: {
+      about:
+        'Builds the standard WIFI: URI (SSID, encryption type, password, hidden flag) with proper escaping, then renders it as a QR code. Anyone with a modern phone camera can scan and auto-join.',
+      useCases: [
+        'Posting a guest Wi-Fi QR at reception or in a meeting room.',
+        'Printing on a moving-day welcome flyer.',
+        'Adding to a conference attendee handout.',
+      ],
+      gotchas: [
+        'The password is in the QR code in plain form. Anyone who photographs the QR can read it.',
+        'Use the "hidden" flag only if your network is set to broadcast off — most home routers don\'t need it.',
+      ],
+    },
+  },
+  {
+    slug: 'ulid-generator',
+    name: 'ULID Generator',
+    description: 'Generate sortable, URL-safe ULIDs (and decode existing ones).',
+    category: 'generate',
+    keywords: ['ulid', 'uuid', 'id', 'sortable', 'timestamp'],
+    Component: lazy(() => import('../tools/ulid-generator')),
+    seo: {
+      title: 'ULID Generator Online — Sortable, URL-Safe, 26 Chars',
+      description:
+        'Generate ULIDs (Universally Unique Lexicographically Sortable Identifiers) in bulk. Decode any ULID to see its timestamp. Crockford base32, no server contact.',
+    },
+    content: {
+      about:
+        'ULIDs combine a 48-bit millisecond timestamp with 80 random bits, encoded in Crockford base32. Sortable by creation time, URL-safe, shorter than UUIDs.',
+      useCases: [
+        'Picking IDs for new records that should sort by creation order.',
+        'Replacing UUIDv4 in a new project for better index locality.',
+        'Decoding an existing ULID to see when it was created.',
+      ],
+      gotchas: [
+        'ULIDs leak creation time. If that\'s sensitive (e.g. user IDs), use UUIDv4 instead.',
+        'Multiple ULIDs generated in the same millisecond aren\'t guaranteed to be monotonic in this implementation.',
+      ],
+    },
+  },
+  {
+    slug: 'token-generator',
+    name: 'API Token Generator',
+    description: 'Generate cryptographically random tokens with optional prefixes.',
+    category: 'generate',
+    keywords: ['token', 'api', 'key', 'secret', 'random', 'bearer'],
+    Component: lazy(() => import('../tools/token-generator')),
+    seo: {
+      title: 'API Token Generator Online — Random, Prefixed, URL-Safe',
+      description:
+        'Generate secure API tokens with your choice of charset (hex, base64url, alphanumeric), length, and optional prefix (sk_live_, pk_, github_pat_…). Backed by WebCrypto.',
+    },
+    content: {
+      about:
+        'Uses crypto.getRandomValues for true randomness. Includes presets for common provider conventions (Stripe-style sk_live_, GitHub-style github_pat_) plus custom prefixes.',
+      useCases: [
+        'Seeding env vars for a new service: `API_KEY=`, `INTERNAL_TOKEN=`, etc.',
+        'Generating signed-URL secrets or webhook signing keys.',
+        'Creating per-environment test credentials.',
+      ],
+      gotchas: [
+        'A prefixed token looks like an official key but isn\'t actually issued by that provider — only useful for internal patterns.',
+      ],
+    },
+  },
+  {
+    slug: 'math-evaluator',
+    name: 'Math Evaluator',
+    description: 'Evaluate arithmetic expressions with sqrt, sin, log, pow, PI, E and more.',
+    category: 'convert',
+    keywords: ['math', 'calculator', 'evaluate', 'expression', 'sqrt', 'log'],
+    Component: lazy(() => import('../tools/math-evaluator')),
+    seo: {
+      title: 'Math Expression Evaluator Online — sqrt, log, sin, pow, PI',
+      description:
+        'Paste an arithmetic expression and get the result. Supports + - * / %, parentheses, and the standard Math functions (sqrt, log, pow, sin, abs, hypot, min, max) plus constants PI, E, LN2.',
+    },
+    content: {
+      about:
+        'Pure JavaScript expression evaluator with an identifier allowlist (only Math functions and constants pass). Useful for arithmetic that\'s too annoying for a phone calculator but too simple to open Python.',
+      useCases: [
+        'Converting "every 15 min for 8 working hours" to a number: `15 * 60 * 8`.',
+        'Computing log₂(N) for a binary tree depth.',
+        'Quick golden-ratio check: `(1 + sqrt(5)) / 2`.',
+      ],
+      gotchas: [
+        'No arbitrary precision — JavaScript number limits apply (53-bit safe integer, ~15 significant decimals).',
+        'Trig functions take radians, not degrees.',
+      ],
+    },
+  },
 ];
 
 export const toolBySlug: Record<string, Tool> = Object.fromEntries(

@@ -32,14 +32,41 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "debugdaily",
-        "url": "https://debugdaily.online",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "Any (browser, Linux desktop)",
-        "description": "Free online toolkit for developers, DevOps engineers, and sysadmins. 50+ tools including JSON formatter, JWT decoder, regex tester, DNS lookup, SSL checker.",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "creator": { "@type": "Organization", "name": "debugdaily" }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://debugdaily.online/#website",
+            "name": "debugdaily",
+            "url": "https://debugdaily.online",
+            "description": "Free online toolkit for developers, DevOps engineers, and sysadmins.",
+            "publisher": { "@id": "https://debugdaily.online/#org" },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://debugdaily.online/?q={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://debugdaily.online/#org",
+            "name": "debugdaily",
+            "url": "https://debugdaily.online",
+            "logo": "https://debugdaily.online/og.png"
+          },
+          {
+            "@type": "WebApplication",
+            "name": "debugdaily",
+            "url": "https://debugdaily.online",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Any (browser, Linux desktop)",
+            "description": "78 free online tools for developers, DevOps engineers, and sysadmins. JSON formatter, JWT decoder, regex tester, DNS lookup, SSL checker, TOTP, HMAC, and more.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "creator": { "@id": "https://debugdaily.online/#org" }
+          }
+        ]
       }
     </script>
 

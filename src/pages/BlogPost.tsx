@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSeo } from '../lib/seo';
-import { postBySlug, posts } from '../blog';
+import { postBySlug, posts, relatedPostsByTags } from '../blog';
 import { NotFound } from './NotFound';
 
 export function BlogPost() {
@@ -15,16 +15,43 @@ export function BlogPost() {
     jsonLd: post
       ? {
           '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          headline: post.title,
-          datePublished: post.publishedAt,
-          author: { '@type': 'Organization', name: 'debugdaily' },
-          description: post.description,
-          mainEntityOfPage: {
-            '@type': 'WebPage',
-            '@id': `https://debugdaily.online/blog/${post.slug}`,
-          },
-          keywords: post.tags.join(', '),
+          '@graph': [
+            {
+              '@type': 'BlogPosting',
+              headline: post.title,
+              datePublished: post.publishedAt,
+              author: { '@type': 'Organization', name: 'debugdaily' },
+              description: post.description,
+              mainEntityOfPage: {
+                '@type': 'WebPage',
+                '@id': `https://debugdaily.online/blog/${post.slug}`,
+              },
+              keywords: post.tags.join(', '),
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'debugdaily',
+                  item: 'https://debugdaily.online/',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Blog',
+                  item: 'https://debugdaily.online/blog',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 3,
+                  name: post.title,
+                  item: `https://debugdaily.online/blog/${post.slug}`,
+                },
+              ],
+            },
+          ],
         }
       : undefined,
   });
@@ -35,6 +62,7 @@ export function BlogPost() {
   const idx = posts.findIndex((p) => p.slug === post.slug);
   const next = posts[idx + 1];
   const prev = posts[idx - 1];
+  const related = relatedPostsByTags(post.tags, post.slug);
 
   return (
     <article className="max-w-3xl space-y-6">
@@ -82,6 +110,31 @@ export function BlogPost() {
           <Component />
         </Suspense>
       </div>
+
+      {related.length > 0 ? (
+        <section className="border-t border-border pt-6 space-y-3">
+          <h2 className="text-2xs uppercase tracking-wider font-mono text-subtle">
+            Related posts
+          </h2>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {related.map((r) => (
+              <li key={r.slug}>
+                <Link
+                  to={`/blog/${r.slug}`}
+                  className="group block rounded-md border border-border bg-surface p-3 hover:border-border-strong hover:bg-surface-2 transition-colors h-full"
+                >
+                  <div className="text-text group-hover:text-accent transition-colors leading-snug">
+                    {r.title}
+                  </div>
+                  <div className="text-2xs text-subtle font-mono mt-1">
+                    {r.readingTimeMin} min · {r.tags.slice(0, 3).join(' · ')}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <nav className="border-t border-border pt-6 flex items-center justify-between gap-3 text-sm">
         {prev ? (
