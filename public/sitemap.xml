@@ -505,6 +505,24 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://debugdaily.online/blog/regex-catastrophic-backtracking</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://debugdaily.online/blog/uuid-v4-vs-v7-2026</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://debugdaily.online/blog/base64-vs-base64url</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://debugdaily.online/blog/spf-dkim-dmarc-debug</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>

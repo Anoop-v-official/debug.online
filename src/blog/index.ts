@@ -12,6 +12,36 @@ export interface PostMeta {
 
 export const posts: PostMeta[] = [
   {
+    slug: 'regex-catastrophic-backtracking',
+    title: 'Regex catastrophic backtracking: how to spot it before production does',
+    description:
+      'A regex that takes 5ms on short input and 30 seconds on slightly longer input is not slow — it is exponential. Here is how to recognize the pattern, why it happens, and three reliable fixes.',
+    publishedAt: '2026-05-30',
+    readingTimeMin: 9,
+    tags: ['regex', 'performance', 'security', 'redos'],
+    Component: lazy(() => import('./posts/regex-catastrophic-backtracking')),
+  },
+  {
+    slug: 'uuid-v4-vs-v7-2026',
+    title: 'UUIDv4 or UUIDv7 in 2026: which one belongs in your primary key',
+    description:
+      'v4 has been the reflexive answer for twenty years. v7 is now standardized and fixes the one real problem v4 has as a clustered-index primary key. Here is when each one is right.',
+    publishedAt: '2026-05-20',
+    readingTimeMin: 10,
+    tags: ['uuid', 'ulid', 'database', 'identifiers'],
+    Component: lazy(() => import('./posts/uuid-v4-vs-v7-2026')),
+  },
+  {
+    slug: 'base64-vs-base64url',
+    title: 'Base64 vs base64url: the two-character difference that breaks every JWT debug session',
+    description:
+      'Base64 and base64url share an alphabet, an expansion ratio, and a name. They are also incompatible. Here is the two-character difference, where each one shows up, and the bugs that come from confusing them.',
+    publishedAt: '2026-05-10',
+    readingTimeMin: 8,
+    tags: ['base64', 'encoding', 'jwt', 'oauth'],
+    Component: lazy(() => import('./posts/base64-vs-base64url')),
+  },
+  {
     slug: 'spf-dkim-dmarc-debug',
     title: 'SPF, DKIM, DMARC: a practical email-debugging guide',
     description:
