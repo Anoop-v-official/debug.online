@@ -70,40 +70,49 @@ export function ToolFrame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const jsonLd = useMemo(
-    () => ({
-      '@context': 'https://schema.org',
-      '@graph': [
-        {
-          '@type': 'SoftwareApplication',
-          name: tool.name,
-          description: tool.seo.description,
-          applicationCategory: 'DeveloperApplication',
-          operatingSystem: 'Any (browser)',
-          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-          url: `https://debugdaily.online/tools/${tool.slug}`,
-        },
-        {
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            {
-              '@type': 'ListItem',
-              position: 1,
-              name: 'debugdaily',
-              item: 'https://debugdaily.online/',
-            },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: tool.name,
-              item: `https://debugdaily.online/tools/${tool.slug}`,
-            },
-          ],
-        },
-      ],
-    }),
-    [tool],
-  );
+  const jsonLd = useMemo(() => {
+    const graph: Array<Record<string, unknown>> = [
+      {
+        '@type': 'SoftwareApplication',
+        name: tool.name,
+        description: tool.seo.description,
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Any (browser)',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        url: `https://debugdaily.online/tools/${tool.slug}`,
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'debugdaily',
+            item: 'https://debugdaily.online/',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: tool.name,
+            item: `https://debugdaily.online/tools/${tool.slug}`,
+          },
+        ],
+      },
+    ];
+
+    if (tool.content.faq && tool.content.faq.length > 0) {
+      graph.push({
+        '@type': 'FAQPage',
+        mainEntity: tool.content.faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      });
+    }
+
+    return { '@context': 'https://schema.org', '@graph': graph };
+  }, [tool]);
 
   useSeo({
     title: tool.seo.title,

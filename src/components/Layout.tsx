@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from './Header';
+import { TotalVisits } from './TotalVisits';
 
 export function Layout({
   children,
@@ -23,10 +24,13 @@ export function Layout({
       </main>
       <footer className="border-t border-border mt-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs text-subtle">
-          <span className="font-mono">
-            © {new Date().getFullYear()}{' '}
-            <span className="text-text">debug</span>
-            <span className="text-accent">{'<daily>'}</span>
+          <span className="font-mono flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>
+              © {new Date().getFullYear()}{' '}
+              <span className="text-text">debug</span>
+              <span className="text-accent">{'<daily>'}</span>
+            </span>
+            <TotalVisits />
           </span>
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link to="/blog" className="hover:text-text">

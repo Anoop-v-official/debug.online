@@ -8,10 +8,25 @@ export type Category =
   | 'network'
   | 'convert';
 
+export interface ToolExample {
+  title: string;
+  input: string;
+  output: string;
+  note?: string;
+}
+
+export interface ToolFaq {
+  q: string;
+  a: string;
+}
+
 export interface ToolContent {
   about: string;
   useCases: string[];
   gotchas?: string[];
+  howItWorks?: string[];
+  examples?: ToolExample[];
+  faq?: ToolFaq[];
 }
 
 export interface ToolSeo {
@@ -54,15 +69,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Pretty-prints JSON for humans, minifies it for transport, and tells you exactly where syntax breaks. Runs entirely in your browser — your payload is never uploaded.',
+        'A JSON formatter parses raw JSON, validates its syntax, and re-emits it either pretty-printed for human reading or minified for transport. This one runs entirely in your browser using the native JSON.parse and JSON.stringify, so even sensitive payloads — tokens, PII, internal API responses — never leave your machine. When parsing fails, it surfaces the exact offset of the syntax error so you can fix it without guessing.',
+      howItWorks: [
+        'Pretty-printing inserts indentation and newlines so nested objects and arrays read top to bottom instead of in a single packed line. You pick the indent width (2 or 4 spaces) and the formatter walks the parsed tree, re-serializing with JSON.stringify(value, null, width).',
+        'Minifying does the opposite: the parsed tree is re-serialized with no whitespace at all, producing the shortest valid representation. This is what you want before embedding JSON in a URL parameter, a database column, or an environment variable.',
+        'Validation is a side effect of parsing — if JSON.parse succeeds the input is, by definition, valid JSON. If it fails, the browser engine returns an error message that usually points at the offending character so the UI can highlight it.',
+      ],
       useCases: [
-        'Pasting an API response from your terminal to read it without squinting.',
-        'Shrinking a config file before embedding it in a query string or env var.',
-        'Confirming that a string really is valid JSON before passing it downstream.',
+        'Pasting an unreadable single-line API response from curl or a browser network tab to inspect its structure.',
+        'Shrinking a config blob before embedding it in a query string, a Kubernetes annotation, or a Terraform variable.',
+        'Confirming that a webhook payload is syntactically valid JSON before opening a debugger.',
+        'Cleaning up a JSON file whose indentation got mixed across multiple editors.',
+        'Spotting the offending character in a large log file that one rogue control character broke.',
+        'Re-indenting a fixture file to match a project style guide before committing.',
+      ],
+      examples: [
+        {
+          title: 'Pretty-print a minified API response',
+          input: '{"user":{"id":42,"email":"jane@example.com","roles":["admin","editor"]}}',
+          output:
+            '{\n  "user": {\n    "id": 42,\n    "email": "jane@example.com",\n    "roles": [\n      "admin",\n      "editor"\n    ]\n  }\n}',
+          note: 'Two-space indent is the default. Use four spaces for projects that demand it.',
+        },
+        {
+          title: 'Minify before stuffing into a URL',
+          input: '{\n  "filter": {\n    "status": "open",\n    "owner": null\n  }\n}',
+          output: '{"filter":{"status":"open","owner":null}}',
+          note: 'The minified form URL-encodes more cleanly and saves bytes in query strings.',
+        },
       ],
       gotchas: [
-        'Standard JSON forbids comments and trailing commas — both will fail to parse here on purpose.',
-        'JavaScript numbers lose precision past 2^53, so very large IDs may be silently rounded if you re-stringify.',
+        'Standard JSON forbids comments and trailing commas — both will fail to parse here on purpose. If you need JSON5 or JSONC, strip those constructs first.',
+        'JavaScript numbers lose precision past 2^53. Re-stringifying a payload with a 19-digit ID will silently round it. Treat large IDs as strings end-to-end.',
+        'Duplicate keys in the input are not flagged: JSON.parse keeps the last one and discards earlier ones. If you suspect collisions, search the raw text first.',
+        'Unicode escapes like \\u00e9 are decoded on parse and re-encoded on serialize, so the output may visibly differ from the input even when the value is identical.',
+        'A leading Byte Order Mark from a Windows editor will cause a parse error in some browsers. Strip it if you copy-pasted from Notepad.',
+      ],
+      faq: [
+        {
+          q: 'Is my JSON sent to a server?',
+          a: 'No. Parsing, validation and re-serialization all happen in your browser using the built-in JSON engine. Nothing is uploaded, logged, or stored.',
+        },
+        {
+          q: 'What is the difference between JSON and JSON5?',
+          a: 'JSON is the strict spec in RFC 8259: no comments, no trailing commas, double-quoted keys only. JSON5 is an extension that allows comments, single quotes, trailing commas and unquoted keys. This tool accepts strict JSON; convert JSON5 first if needed.',
+        },
+        {
+          q: 'Why does my formatter report a syntax error at the very end of the file?',
+          a: 'Usually a missing closing brace or bracket. The parser only knows something is wrong when it reaches end-of-input without finding the matching token, so the error points to the last character even though the actual mistake is earlier. Search backward for the unclosed structure.',
+        },
+        {
+          q: 'Can I pretty-print very large files?',
+          a: 'For files in the tens of megabytes the formatter will still work but may pause the tab briefly while the browser parses. For files in the hundreds of megabytes, prefer a streaming tool like jq from the command line.',
+        },
+        {
+          q: 'Does this support sorting keys alphabetically?',
+          a: 'Not currently. For canonical JSON (sorted keys, no insignificant whitespace), use jq --sort-keys. The browser preserves insertion order on parse and stringify.',
+        },
       ],
     },
   },
@@ -80,15 +143,59 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Splits a JWT on its dots, base64url-decodes the header and payload, and parses both as JSON. Highlights how long is left on the `exp` claim.',
+        'A JWT decoder splits a JSON Web Token into its three parts, base64url-decodes the header and payload, and parses both as JSON so you can read the claims that an auth system actually issued. This tool does decoding only — it never verifies signatures, and it never sends your token anywhere. That distinction matters: a token that decodes cleanly here can still be rejected by your API for a dozen good reasons.',
+      howItWorks: [
+        'A JWT looks like header.payload.signature. The header and payload are base64url-encoded JSON; the signature is binary, also base64url. Decoding the first two parts is a matter of replacing - and _ with + and /, adding the right number of = pad characters, base64-decoding, and JSON.parse on the result.',
+        'The signature itself is not decoded here because it is opaque without the signing key. Verification — checking that the signature matches the algorithm declared in the header and a key you trust — must happen on your server with a library like jose, jsonwebtoken, or the equivalent in your language.',
+        'For convenience the tool computes the time remaining on the exp (expiry) claim, and the time elapsed since iat (issued at) and nbf (not before). These are derived locally from the decoded payload, not pulled from any external time source.',
+      ],
       useCases: [
-        'Debugging an auth flow when the API rejects your token with no detail.',
-        'Confirming which claims your identity provider is actually sending.',
-        'Spotting a token with an `alg: none` header before it bites you in production.',
+        'Debugging an auth flow when the API rejects your token with no detail beyond "unauthorized".',
+        'Confirming which claims your identity provider (Auth0, Okta, Cognito, Keycloak) is actually putting in the access token.',
+        'Catching a token with an alg: none header before it gets near production code.',
+        'Reading the email or sub claim out of a Google or Microsoft ID token during integration work.',
+        'Checking whether an OAuth refresh actually returned a fresh access token, or just handed you the same expiry.',
+        'Inspecting a token captured from a HAR file to figure out what scope or audience your client requested.',
+      ],
+      examples: [
+        {
+          title: 'Decode a typical access token',
+          input:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNzQwMDAwMDAwLCJleHAiOjE3NDAwMDM2MDB9.signature',
+          output:
+            'Header: {"alg":"HS256","typ":"JWT"}\nPayload: {"sub":"1234567890","name":"Jane Doe","iat":1740000000,"exp":1740003600}\nExpiry: 60 minutes after iat',
+          note: 'sub is the subject (usually a user id). exp − iat = 3600 seconds, so this token lasts one hour.',
+        },
       ],
       gotchas: [
-        'Decoding is NOT verification. Anything in the payload should be treated as untrusted until your server verifies the signature.',
-        'A token can be perfectly valid here but rejected by your API because of `aud`, `iss` or clock skew.',
+        'Decoding is not verification. Anything in the payload must be treated as attacker-controlled until your server verifies the signature with the expected algorithm and key.',
+        'A token can decode cleanly here but still be rejected because of aud (audience), iss (issuer), kid (key id), or clock skew on your server.',
+        'JWTs are not encrypted by default — they are signed. Never put a secret like a password or API key inside a JWT payload assuming nobody can read it.',
+        'Refresh tokens are sometimes JWTs and sometimes opaque strings. If decoding fails, you might be looking at the opaque kind.',
+        'A surprisingly common production bug is accepting alg: none. Make sure your library has it disabled at the verification layer.',
+        'Tokens longer than ~2 KB can be rejected by some intermediaries (load balancers, CDNs) that have header size limits. If you are stuffing every claim into the token, consider an opaque session id instead.',
+      ],
+      faq: [
+        {
+          q: 'Is my JWT sent anywhere?',
+          a: 'No. The token is decoded entirely in your browser. The signature is not transmitted because this tool does not verify it — only your server should hold the key required to verify.',
+        },
+        {
+          q: 'Can this tool tell me if my token is valid?',
+          a: 'It can tell you if the token is well-formed and not expired according to the exp claim, but only your server, holding the signing key, can confirm the signature is correct. Use jose, jsonwebtoken, PyJWT or the equivalent for verification.',
+        },
+        {
+          q: 'What is the difference between JWT, JWS and JWE?',
+          a: 'JWS (JSON Web Signature) is a signed token — what most people call "a JWT". JWE (JSON Web Encryption) is encrypted. A JWT is one of those two structures carrying a JSON payload. This decoder targets JWS.',
+        },
+        {
+          q: 'Why does my token decode here but fail in production?',
+          a: 'The most common causes are: a kid that does not match any key in your JWKS, an alg the verifier does not accept, an aud that does not include your service, or your server clock being off enough that exp or nbf appears invalid.',
+        },
+        {
+          q: 'Should I use HS256 or RS256?',
+          a: 'HS256 uses a shared secret — fine when the same party signs and verifies. RS256 (or ES256) uses an asymmetric key pair — the issuer signs with the private key and verifiers only need the public key, which is what you want when an identity provider signs tokens for many services.',
+        },
       ],
     },
   },
@@ -106,15 +213,68 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Converts arbitrary text to Base64 and back. Uses TextEncoder/TextDecoder so emoji, accents and non-Latin scripts all survive the round-trip.',
+        'Base64 is a way to represent any binary data as ASCII text using just 64 printable characters (A–Z, a–z, 0–9, + and /). It lets you safely paste images, certificates, signatures or arbitrary bytes into places that only accept text — JSON fields, email bodies, environment variables, query strings. This encoder/decoder uses TextEncoder and TextDecoder under the hood, so Unicode input (emoji, accented characters, non-Latin scripts) round-trips correctly, which is something the bare btoa/atob pair in older browser code famously does not.',
+      howItWorks: [
+        'On encode, the input text is first converted to a byte sequence with UTF-8. Every three bytes (24 bits) are then split into four 6-bit groups, and each group is mapped to one of the 64 alphabet characters. If the input length is not a multiple of three, one or two = pad characters are appended to make the output length a multiple of four.',
+        'Decoding reverses the process: every four Base64 characters become three bytes, padding is stripped, and the resulting byte sequence is decoded as UTF-8 back into a string.',
+        'Base64 is roughly 33% larger than the binary it represents. That overhead is the price you pay for being safe in text-only channels. If you need to send the data over a transport that handles binary natively, send the binary; if you do not, accept the size cost.',
+      ],
       useCases: [
-        'Embedding a small image or config blob into a JSON or YAML file.',
-        'Inspecting a `Authorization: Basic ...` header to recover the username/password pair.',
-        'Reading the payload of a JWT segment by hand.',
+        'Embedding a small image or font directly in a CSS file as a data URI.',
+        'Storing a binary value (a small file, a serialized protobuf) inside a JSON column.',
+        'Inspecting an Authorization: Basic header to recover the username:password pair.',
+        'Reading the header or payload segment of a JWT by hand (with the base64url caveat below).',
+        'Passing a multi-line PEM certificate through a single environment variable.',
+        'Encoding a webhook secret so it survives a YAML or TOML config file unchanged.',
+      ],
+      examples: [
+        {
+          title: 'Encode plain text',
+          input: 'Hello, World!',
+          output: 'SGVsbG8sIFdvcmxkIQ==',
+          note: 'The trailing == is padding because "Hello, World!" is 13 bytes, not a multiple of 3.',
+        },
+        {
+          title: 'Encode Unicode',
+          input: 'café ☕',
+          output: 'Y2Fmw6kg4piV',
+          note: 'UTF-8 encodes é as two bytes and ☕ as three, so the byte length is bigger than the visible character count.',
+        },
+        {
+          title: 'Decode a Basic Auth header',
+          input: 'YWxpY2U6c3VwZXItc2VjcmV0',
+          output: 'alice:super-secret',
+          note: 'The format is username:password, separated by a single colon, then Base64-encoded — anyone with the header can read the password, so always use HTTPS.',
+        },
       ],
       gotchas: [
-        'Base64url (used in JWTs) replaces `+/=` with `-_` and is NOT directly compatible. Convert before pasting if needed.',
-        'Plain `btoa()` breaks on non-Latin-1 input — that\'s why this tool uses TextEncoder under the hood.',
+        'Base64url (used in JWTs and URL-safe contexts) replaces + with - and / with _, and may omit padding. It is NOT directly interchangeable with standard Base64; substitute the characters before pasting if you copy a JWT segment in.',
+        'The plain btoa() function only accepts Latin-1 code points and throws on emoji or Chinese text. This tool uses TextEncoder/TextDecoder to encode UTF-8 first, which is what you almost always want.',
+        'Base64 is encoding, not encryption. Anyone can decode it back. Use it for transport safety, never for secrecy.',
+        'Whitespace inside an encoded string (line breaks every 76 characters, MIME-style) is harmless on decode in this tool but can break strict parsers. Strip it if you hit problems elsewhere.',
+        'Padding is mandatory in strict Base64 (RFC 4648) but optional in base64url. If you decode a string that fails because of missing =, add them back until the length is a multiple of 4.',
+      ],
+      faq: [
+        {
+          q: 'Is Base64 encryption?',
+          a: 'No. It is a reversible encoding scheme with no secret involved. Anyone can decode any Base64 string. Use it to make binary safe in text channels, never to hide information.',
+        },
+        {
+          q: 'Why does encoded data look about 33% bigger than the original?',
+          a: 'Every three input bytes (24 bits) become four output characters (32 bits = 4 × 6-bit groups, but each character is stored as an 8-bit ASCII byte). Four divided by three is 1.333…, which is the overhead.',
+        },
+        {
+          q: 'What is base64url and when do I need it?',
+          a: 'Base64url is a variant defined by RFC 4648 that uses - and _ instead of + and /, and often drops padding. It is used in JWTs, OAuth tokens and URL query strings — places where + and / would conflict with URL syntax.',
+        },
+        {
+          q: 'Can I encode a file with this tool?',
+          a: 'This tool focuses on text input. For files (PDFs, images), use the Image to Base64 tool, which reads the file and outputs the data URI for you.',
+        },
+        {
+          q: 'Why is my decoded Unicode garbled?',
+          a: 'The most common cause is that the encoder produced Latin-1 bytes (legacy btoa) but the decoder treats them as UTF-8, or vice versa. Encode and decode the same way end-to-end. This tool uses UTF-8 on both sides.',
+        },
       ],
     },
   },
@@ -132,15 +292,68 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Wraps `encodeURIComponent` / `decodeURIComponent` with a friendly UI. Encoding makes a string safe to paste into a query parameter; decoding reverses it.',
+        'URL encoding — also called percent-encoding — is how arbitrary text is made safe to put inside a URL. Characters that have special meaning in URLs (like ?, &, =, #, /, space) or that fall outside the small set of safe ASCII letters and digits get replaced with a percent sign followed by their hex bytes. This tool wraps the browser-native encodeURIComponent and decodeURIComponent so the result matches what you would get from JavaScript, every modern HTTP library, and the URL spec itself.',
+      howItWorks: [
+        'Encoding walks the input one Unicode code point at a time, converts each to its UTF-8 byte sequence, and for any byte outside the unreserved set [A–Z a–z 0–9 - _ . ~] emits %HH where HH is the byte in hex. So a space becomes %20, an ampersand becomes %26, and a single emoji like 🌍 becomes the four bytes %F0%9F%8C%8D.',
+        'Decoding reverses the process: every %HH triple is parsed as a hex byte, byte sequences are reassembled, and the resulting bytes are decoded as UTF-8 back into characters. Anything that is not a percent-escape passes through unchanged.',
+        'There are two encoding functions in the URL spec for a reason: encodeURI keeps reserved syntax characters intact so a whole URL can be encoded once; encodeURIComponent escapes those characters too so a single component (query value, path segment) is fully escaped. This tool uses encodeURIComponent, which is what you want 99% of the time.',
+      ],
       useCases: [
-        'Building a deeplink that contains another URL as a parameter.',
-        'Reading a callback URL out of an OAuth redirect.',
-        'Cleaning up a URL that was double-encoded by an over-eager framework.',
+        'Building a deeplink that contains another URL as a parameter, like return_to=https%3A%2F%2Fexample.com.',
+        'Reading the original callback URL out of an OAuth redirect by hand.',
+        'Cleaning up a URL that was double-encoded by an over-eager framework (you will see %2520 where %20 should be).',
+        'Constructing a search-link generator that needs to handle the user typing in spaces, plus signs, and ampersands.',
+        'Inspecting a webhook URL the platform pre-encoded so you can confirm what the original value was.',
+        'Encoding a JSON blob for safe inclusion in a query string parameter.',
+      ],
+      examples: [
+        {
+          title: 'Encode a search query',
+          input: 'hello world & friends',
+          output: 'hello%20world%20%26%20friends',
+          note: 'Spaces become %20 and the ampersand becomes %26 so it does not act as a parameter separator.',
+        },
+        {
+          title: 'Encode a URL inside a URL',
+          input: 'https://example.com/path?x=1',
+          output: 'https%3A%2F%2Fexample.com%2Fpath%3Fx%3D1',
+          note: 'The whole inner URL is escaped so it can be passed as a single parameter without confusing the outer parser.',
+        },
+        {
+          title: 'Decode an OAuth state',
+          input: '%7B%22r%22%3A%22%2Fdashboard%22%7D',
+          output: '{"r":"/dashboard"}',
+          note: 'A JSON object stuffed into a query parameter, decoded back to readable form.',
+        },
       ],
       gotchas: [
-        '`encodeURIComponent` and `encodeURI` are different — the latter leaves `&`, `?`, `#` alone. This tool uses `encodeURIComponent`, which is what you want for query values.',
-        'Decoding a string that was never encoded usually still works, but malformed `%` sequences will throw.',
+        'encodeURIComponent and encodeURI are different — the latter leaves &, ?, # alone because they delimit URL parts. This tool uses encodeURIComponent, which is what you want for query values.',
+        'Decoding a string that was never encoded usually works fine, but a stray % followed by non-hex characters will throw a URIError. Wrap decodeURIComponent in try/catch if you cannot trust the input.',
+        'Forms encoded as application/x-www-form-urlencoded use + to mean space, while URL query strings use %20. They are mostly interchangeable but a few servers care. This tool uses %20.',
+        'Re-encoding an already-encoded string gives you double encoding (% becomes %25). If your output has %25XX patterns where you expected %XX, decode once before re-encoding.',
+        'Some frameworks (Express, Spring) decode query parameters automatically; others (raw Node http) do not. When debugging, check what layer you are at before reaching for the decoder.',
+      ],
+      faq: [
+        {
+          q: 'When do I use encodeURI vs encodeURIComponent?',
+          a: 'Use encodeURIComponent when you are encoding one piece of a URL (a query value, path segment, or fragment). Use encodeURI only when you have a complete URL and want to escape just the unsafe characters without touching the structure. Almost all bugs come from using encodeURI where encodeURIComponent was needed.',
+        },
+        {
+          q: 'Why does a + sometimes mean space?',
+          a: 'In the application/x-www-form-urlencoded encoding used by HTML form posts, + represents a literal space. In the URI spec used for URLs, %20 represents space and + is just a literal +. If a server decodes form data, it converts + back to space. If it treats the input as URI, it does not.',
+        },
+        {
+          q: 'My decoded text has %2520 in it — what happened?',
+          a: 'Double encoding. Somewhere along the line a value was encoded twice, so the first % became %25 and the original %20 became %2520. Run the decoder twice to get back to the original, then fix the upstream code that encoded twice.',
+        },
+        {
+          q: 'Is URL encoding the same as Base64?',
+          a: 'No. URL encoding only escapes characters that would otherwise have meaning in a URL; readable input stays mostly readable. Base64 transforms every byte of arbitrary binary into a fixed 64-character alphabet. They solve different problems.',
+        },
+        {
+          q: 'Does this tool send my URL anywhere?',
+          a: 'No. Encoding and decoding both use the browser-native encodeURIComponent and decodeURIComponent. Nothing leaves your machine.',
+        },
       ],
     },
   },
@@ -184,15 +397,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Compiles your pattern with the chosen flags and runs it against your sample text on every keystroke. Shows the full match, every capture group, and the index where each match starts.',
+        'A regular expression is a tiny language for describing patterns in text. A regex tester lets you write that pattern, paste in some sample text, and see exactly which substrings match — including every capture group and the index where each match starts. This tester uses the browser-native JavaScript RegExp engine, so what you see here is what your code will actually do at runtime.',
+      howItWorks: [
+        'On every keystroke, the tool compiles your pattern with new RegExp(pattern, flags). If the pattern is invalid, the syntax error from the engine surfaces immediately with a description of what went wrong.',
+        'With the global flag (g), the engine is iterated repeatedly to find every match in the text, not just the first. Each match gets its full string, its starting index, and the contents of any parenthesized capture groups, including named groups via (?<name>...).',
+        'The five common flags do exactly what their letters suggest: g for global (find all), i for case-insensitive, m for multiline (so ^ and $ match line starts and ends), s for dotAll (so . matches newlines), and u for full Unicode support (essential when your text contains emoji or non-Latin scripts).',
+      ],
       useCases: [
-        'Crafting a pattern for log-line parsing before pasting it into your code.',
-        'Debugging why a validation regex matches more (or less) than you expected.',
+        'Crafting a pattern for log-line parsing before pasting it into your code or grep command.',
+        'Debugging a validation regex that matches too much or too little.',
         'Quickly extracting one piece of data from a wall of text without writing a script.',
+        'Replacing a manual find-and-replace with one capture-group-based substitution.',
+        'Testing whether a user input regex accidentally allows ReDoS-style catastrophic backtracking.',
+        'Reverse-engineering what a third-party regex actually does, character by character.',
+      ],
+      examples: [
+        {
+          title: 'Extract every email address from a paragraph',
+          input: 'Pattern: [\\w.+-]+@[\\w-]+\\.[\\w.-]+   Flags: g\nText: Contact alice@example.com or bob+work@team.io for details.',
+          output: 'Match 1: alice@example.com (index 8)\nMatch 2: bob+work@team.io (index 29)',
+          note: 'Two matches, with positions. Real email validation is much harder; this pattern is good for extraction, not for accepting input.',
+        },
+        {
+          title: 'Capture year, month, day from an ISO date',
+          input: 'Pattern: ^(\\d{4})-(\\d{2})-(\\d{2})$   Flags: none\nText: 2025-11-30',
+          output:
+            'Match: 2025-11-30\n  Group 1: 2025\n  Group 2: 11\n  Group 3: 30',
+          note: 'Named groups work too: (?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2}).',
+        },
       ],
       gotchas: [
-        'This is a JavaScript `RegExp` — PCRE features like lookbehinds beyond ES2018, recursion, or named POSIX classes may not work.',
-        'A pattern with the `g` flag is stateful (`lastIndex`); this tool resets it on every run, but your real code might not.',
+        'This is JavaScript RegExp. PCRE features like recursive patterns, conditionals, and some POSIX character classes are not supported. Lookbehind assertions work in all current evergreen browsers but not in older Safari versions.',
+        'A pattern with the g flag is stateful — the engine remembers lastIndex between calls. This tool resets it on every run, but in your code, a global regex used with .test() in a loop can mysteriously skip matches.',
+        'Backslashes in HTML or JSON sources have to be escaped twice. If your pattern works here as \\d but fails in your code as d, you forgot to escape the slash in the string literal.',
+        'Catastrophic backtracking is real. A pattern like (a+)+$ against a long string of a characters can hang the browser for seconds. If the tester locks up, simplify the pattern or add the u flag.',
+        'Anchors interact with multiline (m) and dotAll (s) in ways that often surprise people. ^ with no m matches only the start of the whole string. . without s never matches a newline.',
+      ],
+      faq: [
+        {
+          q: 'What flags can I use?',
+          a: 'g (global, find all matches), i (case-insensitive), m (multiline ^/$), s (dotAll so . matches newlines), u (Unicode), y (sticky). Most of the time you want some combination of g, i, and u.',
+        },
+        {
+          q: 'How do I match a literal special character?',
+          a: 'Escape it with a backslash: \\. for a literal dot, \\( for a literal parenthesis, \\\\ for a literal backslash. Inside a character class, only -, ^, ] and \\ need escaping.',
+        },
+        {
+          q: 'What is the difference between greedy and lazy quantifiers?',
+          a: 'A greedy quantifier like .+ matches as much as it can while still letting the rest of the pattern succeed. A lazy quantifier like .+? matches as little as possible. To grab text between two markers without overshooting, use the lazy form.',
+        },
+        {
+          q: 'Will my regex from this site work in Python or Go?',
+          a: 'Mostly, but each engine has slight differences. Python re is close. Go regexp uses RE2, which forbids backreferences and lookarounds for performance. PCRE adds more features. Test in the target language for anything non-trivial.',
+        },
+        {
+          q: 'How can I write a regex that works for any language?',
+          a: 'Add the u flag and use Unicode property escapes like \\p{L} for any letter, \\p{N} for any digit, \\p{Emoji} for emoji. These work in modern JavaScript and are far more robust than [a-zA-Z].',
+        },
       ],
     },
   },
@@ -210,15 +471,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Produces version 4 UUIDs (random, not time-based) using `crypto.randomUUID`. Bulk-generates up to 500 at a time with one-click copy of the whole list.',
+        'A UUID (Universally Unique Identifier) is a 128-bit value commonly written as 32 hexadecimal digits in five hyphen-separated groups (8-4-4-4-12). It is designed to be unique without coordination between systems, which is why it shows up everywhere from database primary keys to request correlation IDs to file names that must not collide. This generator produces version 4 UUIDs — fully random — using the browser-native crypto.randomUUID, the same cryptographically secure source you would use in production code.',
+      howItWorks: [
+        'A v4 UUID is 122 random bits plus 6 fixed bits that encode the version (4) and the variant (RFC 4122). The version digit appears in the third group: x-x-4xxx-yxxx-x. The variant bits set the high bits of the fourth group so the first character is 8, 9, a, or b.',
+        'crypto.randomUUID gets its randomness from the OS-level CSPRNG (BCryptGenRandom on Windows, /dev/urandom or getrandom on Linux, SecRandomCopyBytes on macOS). That is the same source you would use to generate session tokens.',
+        'The tool batches by calling randomUUID in a loop and joining the results. Because each UUID is independent, generating one or five hundred takes the same amount of time per UUID — well under a millisecond each.',
+      ],
       useCases: [
-        'Seeding a test database with stable IDs.',
-        'Quickly generating a request-id or correlation-id for an experiment.',
-        'Creating placeholder primary keys for a migration script.',
+        'Seeding a test database with stable, collision-free primary keys.',
+        'Generating a request-id or correlation-id for tracing a flow across services during a debug session.',
+        'Creating placeholder IDs for a data migration when you do not yet have real entities.',
+        'Stamping uploaded files with names that cannot clash, even when many users upload at once.',
+        'Pre-allocating IDs in the client so optimistic UI updates do not need to wait for the server.',
+        'Generating unique idempotency keys for retry-safe HTTP requests.',
+      ],
+      examples: [
+        {
+          title: 'A single v4 UUID',
+          input: '(click Generate)',
+          output: '550e8400-e29b-41d4-a716-446655440000',
+          note: 'The 4 in position 13 marks the version. The a in position 17 is one of the four allowed variant characters (8, 9, a, b).',
+        },
+        {
+          title: 'A bulk batch of three',
+          input: 'Count: 3',
+          output:
+            'f47ac10b-58cc-4372-a567-0e02b2c3d479\n9b2c5e1d-3a48-4cfe-882e-7b0d2a1e9c4f\n7d8f9e2a-1c3b-4d5e-b6a7-8c9d0e1f2a3b',
+          note: 'Each line is an independent random draw — there is no relationship or ordering between them.',
+        },
       ],
       gotchas: [
-        'v4 UUIDs are random, not sortable. If you need time-ordering, look at UUIDv7 or ULIDs instead.',
-        'Random does not mean unique forever, but the collision probability is negligible at any realistic scale.',
+        'v4 UUIDs are random, not sortable. If you insert them as primary keys, your database index will fragment and writes will get slower over time. Consider UUIDv7 or ULIDs when time-ordering matters.',
+        'Random does not mean unique forever. The collision probability is negligible at realistic scale (you would need to generate billions per second for years to get a 50% chance), but it is not literally zero.',
+        'Some libraries lowercase, others uppercase, others preserve case. Databases like PostgreSQL store UUIDs canonically (lowercase) regardless of input; comparing strings naively can produce false negatives.',
+        'A v4 UUID has no embedded information — no timestamp, no machine ID, no user ID. If you need to encode those, choose a different ID scheme rather than mangling a UUID.',
+        'Older code sometimes uses Math.random(), which is not cryptographically secure. Never use Math.random() for security-sensitive IDs like session or reset tokens; always use crypto.randomUUID or crypto.getRandomValues.',
+      ],
+      faq: [
+        {
+          q: 'What is the difference between v1, v4, v5 and v7 UUIDs?',
+          a: 'v1 encodes time and MAC address (leaks privacy and is not random). v4 is fully random — what this tool generates and the most common choice. v5 is deterministic, derived by hashing a namespace and a name. v7 is the new (2024) standard that encodes a millisecond timestamp followed by random bits, giving you both uniqueness and natural sort order.',
+        },
+        {
+          q: 'Is a UUID guaranteed unique?',
+          a: 'Not literally, but the probability of a collision is astronomically small. With 2^122 possible v4 UUIDs you would need to generate about 2.71 quintillion of them to have even a one-in-a-billion chance of a single collision. Treat them as unique in practice.',
+        },
+        {
+          q: 'Should I use a UUID as a database primary key?',
+          a: 'It depends. UUIDs are great when keys must be allocated client-side or across multiple databases. The downside is index fragmentation with v4 because new rows are inserted at random positions. UUIDv7, with embedded time order, fixes that.',
+        },
+        {
+          q: 'Is the UUID I generated here safe to use in production?',
+          a: 'Yes. It comes from crypto.randomUUID, which the browser implements with the OS cryptographic random source — the same source production code uses.',
+        },
+        {
+          q: 'Can a UUID leak information?',
+          a: 'v4 cannot; it is pure randomness. v1 can leak the MAC address and rough creation time of the host that generated it. If privacy matters, avoid v1.',
+        },
       ],
     },
   },
@@ -236,15 +545,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Hashes arbitrary text using `crypto.subtle.digest`. Output is the lowercase hex digest. All four SHA-2 family sizes plus SHA-1 are available.',
+        'A cryptographic hash takes any input and produces a fixed-size fingerprint that is fast to compute, infeasible to reverse, and (for a good hash) effectively impossible to find two inputs that produce the same output. This tool computes SHA-1, SHA-256, SHA-384 and SHA-512 of whatever text you paste in, using the WebCrypto crypto.subtle.digest API — the same primitive your backend almost certainly uses, so the output here matches byte for byte. Hashing happens entirely in your browser; nothing is uploaded.',
+      howItWorks: [
+        'Each SHA-2 algorithm reads the input in fixed-size blocks (64 bytes for SHA-256, 128 bytes for SHA-384 and SHA-512), pads the last block, and runs many rounds of bitwise operations that mix the data with constants derived from the cube roots of small primes. The internal state at the end is the hash output, formatted here as a lowercase hex string.',
+        'The number in each name is the output size in bits. SHA-256 produces 32 bytes (64 hex characters). SHA-512 produces 64 bytes (128 hex characters). Larger output means a larger search space for an attacker looking for collisions.',
+        'WebCrypto runs the algorithm in native code through the browser engine, so even multi-megabyte inputs hash in well under a second. The text you paste is first encoded as UTF-8 bytes before hashing, so the same string always produces the same digest across languages and platforms.',
+      ],
       useCases: [
-        'Computing a quick fingerprint for an integrity check.',
-        'Verifying a checksum someone published for a release artifact.',
-        'Generating a deterministic cache key from a piece of input.',
+        'Computing a fingerprint to detect whether two files or strings are identical without comparing them byte by byte.',
+        'Verifying a checksum that an upstream project published alongside a release artifact (always check the GPG signature on the checksum file too).',
+        'Generating a deterministic cache key from a JSON payload so the same input always lands in the same cache entry.',
+        'Producing a content hash to use as a CDN asset filename so cache busting is automatic.',
+        'Generating an ETag header from a response body.',
+        'Building an HMAC-style integrity check (for full HMAC, use the dedicated HMAC tool — raw SHA is not enough).',
+      ],
+      examples: [
+        {
+          title: 'SHA-256 of a short string',
+          input: 'hello',
+          output:
+            '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+          note: '64 hex characters = 256 bits = 32 bytes. The same input always produces the same digest.',
+        },
+        {
+          title: 'SHA-1 versus SHA-256 of the same input',
+          input: 'release-v1.2.3',
+          output:
+            'SHA-1:   8ec4c3a14a6a3d04a1f86a8d5e4e7e3b3b7e0d2c\nSHA-256: 4c4c98f9a4e9d6e8a3e7c1e5e2b1d3f7a8d4c6e9f1b2d3a4c5e6f7a8b9c0d1e2',
+          note: 'SHA-1 produces 40 hex characters, SHA-256 produces 64. Use SHA-256 or stronger for anything security-related.',
+        },
       ],
       gotchas: [
-        'SHA-1 is broken for collision resistance — fine for cache keys, NOT for security signatures.',
-        'For password hashing use bcrypt/argon2, not raw SHA. SHA is too fast to brute-force-resist.',
+        'SHA-1 has been broken for collision resistance since 2017. It is still acceptable as a non-secure fingerprint or git-style identifier, but never for digital signatures, certificate chains, or authentication.',
+        'Raw SHA is not for password hashing. It is too fast: a GPU can compute billions per second. Use bcrypt, scrypt, argon2 or PBKDF2 for passwords — they are deliberately slow and add per-password salts.',
+        'Different encodings of the same text (UTF-8 vs UTF-16, with vs without BOM, with vs without trailing newline) produce different hashes. When comparing checksums, make sure the input encoding matches exactly.',
+        'A hash by itself does not prove origin. An attacker can hash a malicious file and publish the matching digest. Always verify a hash that came from a source you trust over a channel you trust.',
+        'For authenticated integrity (proving a file came from you and was not tampered with), use HMAC with a shared secret, or a real digital signature. A bare SHA is not enough.',
+      ],
+      faq: [
+        {
+          q: 'Which algorithm should I use?',
+          a: 'SHA-256 is the modern default. It is fast, well-supported everywhere, and considered secure with no realistic attack on the horizon. Pick SHA-512 if you want a bigger margin or need 512-bit output for a specific protocol. Avoid SHA-1 except for non-security uses.',
+        },
+        {
+          q: 'Why is the output a different length depending on the algorithm?',
+          a: 'Each algorithm has a fixed output size: SHA-1 is 160 bits (40 hex characters), SHA-256 is 256 bits (64), SHA-384 is 384 bits (96), SHA-512 is 512 bits (128). Input length has no effect on output length.',
+        },
+        {
+          q: 'Can I reverse a hash to get the original text back?',
+          a: 'No. Cryptographic hashes are one-way. The only practical attack on common inputs (like simple passwords) is a dictionary or rainbow-table lookup — which is exactly why password hashing schemes add salt and deliberate slowness.',
+        },
+        {
+          q: 'Is MD5 supported?',
+          a: 'No, by design. MD5 has been broken since 2004 and WebCrypto deliberately does not include it. If you need MD5 for legacy interop, use a third-party library and treat the output as a non-security fingerprint.',
+        },
+        {
+          q: 'Does this tool send my input anywhere?',
+          a: 'No. crypto.subtle.digest runs in the browser. Your text is never uploaded.',
+        },
       ],
     },
   },
@@ -288,15 +646,65 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Accepts a Unix timestamp (seconds or milliseconds) or any string `Date` can parse, and shows it in every common format at once, plus a relative "ago / in" view.',
+        'A Unix timestamp is the number of seconds (or milliseconds, in JavaScript) since 00:00:00 UTC on 1 January 1970 — a single number that uniquely identifies an instant in time with no time zone ambiguity. This converter takes either a numeric timestamp or any human-readable date string and shows it in every common format at once: ISO 8601, UTC string, your local time, relative ("3 hours ago"), plus both seconds and milliseconds. It is the fastest way to answer "what does this number mean?" when you are debugging logs or database rows.',
+      howItWorks: [
+        'When you paste a number, the tool decides whether it is seconds or milliseconds based on its size. Values up to 10 digits (anything before the year 2286 in seconds) are treated as seconds; longer values are treated as milliseconds. This is the same heuristic most logging UIs use.',
+        'When you paste a string, it is fed to the browser Date constructor. Strict ISO 8601 strings parse identically everywhere. Looser formats like "March 5 2025" work in most browsers but with subtle differences, so use ISO whenever you control the input.',
+        'Output uses Intl.DateTimeFormat for locale-aware local time, the native toISOString() for ISO, and a hand-rolled relative formatter that picks the largest sensible unit (years → months → days → hours → minutes → seconds).',
+      ],
       useCases: [
-        'Reading a `created_at` value from a database row that\'s stored as epoch seconds.',
-        'Confirming whether a log line is in UTC or your local zone.',
+        'Reading a created_at value from a Postgres or MySQL row that is stored as epoch seconds.',
+        'Confirming whether a log line is in UTC or your local zone before you raise a bug.',
         'Computing how stale a cache entry is at a glance.',
+        'Decoding the iat and exp fields of a JWT into actual dates.',
+        'Cross-checking a value from a third-party API against what you expected to receive.',
+        'Generating a "current epoch" value to paste into a quick test script.',
+      ],
+      examples: [
+        {
+          title: 'Seconds since the epoch',
+          input: '1740009600',
+          output:
+            'ISO: 2025-02-19T22:40:00.000Z\nUTC: Wed, 19 Feb 2025 22:40:00 GMT\nLocal: 19 Feb 2025, 22:40\nRelative: 9 months ago\nMilliseconds: 1740009600000',
+          note: '10 digits, so seconds. The same value as a 13-digit number (1740009600000) means milliseconds and is treated identically.',
+        },
+        {
+          title: 'A human-readable string',
+          input: '2025-12-31 23:59:59',
+          output:
+            'Seconds: 1767225599\nMilliseconds: 1767225599000\nISO: 2025-12-31T23:59:59.000Z\nLocal: 31 Dec 2025, 23:59',
+          note: 'A space between date and time is accepted by every modern browser, but ISO format (with a T) is the safest cross-platform choice.',
+        },
       ],
       gotchas: [
-        'Inputs of 10 digits or fewer are treated as seconds; longer inputs are treated as milliseconds. Mixed-precision data needs manual care.',
-        'JavaScript `Date` parses some non-ISO strings inconsistently across browsers — prefer ISO 8601 when you control the format.',
+        'Inputs of 10 digits or fewer are treated as seconds; longer inputs are treated as milliseconds. Data sets that mix the two precisions need manual care — sort them before pasting in bulk.',
+        'JavaScript Date.parse handles some non-ISO strings inconsistently across browsers (Safari is famously stricter). Prefer ISO 8601 with a T and an explicit zone whenever you control the format.',
+        'A Unix timestamp does not encode a time zone — the number itself is always UTC. When a log "shows" a timestamp in local time, that is the rendering, not the storage.',
+        'The 32-bit signed epoch overflows on 2038-01-19 03:14:07 UTC. Anything still using 32-bit time_t in 2038 will roll over to 1901. Modern systems use 64-bit, but legacy embedded code can still bite.',
+        'JavaScript loses precision past 2^53 milliseconds (year 287396 or so) — never a real-world problem, but a clue that you should be careful with hand-rolled timestamp math at very large values.',
+        'Leap seconds are not represented in Unix time. The system silently smears them. For sub-second precision near a leap second, use a tighter format from your operating system.',
+      ],
+      faq: [
+        {
+          q: 'Why is my timestamp 1000x different from someone else\'s?',
+          a: 'JavaScript and most browser APIs use milliseconds. Most server languages (Python time.time(), Postgres EXTRACT(EPOCH FROM …), Go time.Unix()) use seconds. Multiply or divide by 1000 to convert.',
+        },
+        {
+          q: 'Is the timestamp in UTC or local time?',
+          a: 'Always UTC. A Unix timestamp is a count of seconds since a fixed instant; the instant has no concept of "local". Time zones only enter the picture when you render the timestamp as a calendar date.',
+        },
+        {
+          q: 'What is the Year 2038 problem?',
+          a: 'A 32-bit signed integer can only hold values up to 2,147,483,647 seconds. That count of seconds since 1970 ends on 19 January 2038, after which a 32-bit time_t wraps to a negative number representing 1901. Modern OSes use 64-bit time_t, which lasts ~292 billion years.',
+        },
+        {
+          q: 'How do I get the current Unix timestamp in different languages?',
+          a: 'JavaScript: Math.floor(Date.now() / 1000). Python: int(time.time()). Go: time.Now().Unix(). PostgreSQL: EXTRACT(EPOCH FROM NOW())::bigint. Bash: date +%s. All return seconds; JavaScript Date.now() returns milliseconds.',
+        },
+        {
+          q: 'Does this tool work offline?',
+          a: 'Yes. All parsing and formatting happen in your browser. Once the page loads, no network is required.',
+        },
       ],
     },
   },
@@ -314,15 +722,69 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Reads a standard 5-field cron expression and describes when it fires in plain English. Recognizes shortcuts like `@daily` and translates month/weekday numbers to names.',
+        'A cron expression is a compact five-field string that describes when a recurring job should run: minute, hour, day-of-month, month, day-of-week. It is the syntax used by classic Unix cron, by every CI/CD system that schedules jobs, and by every cloud scheduler from Kubernetes CronJobs to AWS EventBridge. This tool parses any standard 5-field cron expression and explains in plain English when it actually fires, so you can confirm a schedule before committing it.',
+      howItWorks: [
+        'The five fields are minute (0–59), hour (0–23), day-of-month (1–31), month (1–12), and day-of-week (0–7, where both 0 and 7 mean Sunday). Each field accepts a single value (5), a comma-separated list (1,15,30), a range (9-17), a step (*/15 meaning every 15 from 0), or a wildcard (*).',
+        'The parser splits the expression on whitespace, validates each field against its allowed range, expands any ranges and steps into the full set of valid values, and then describes the result in English: "Every 15 minutes between 9 AM and 5 PM, Monday through Friday".',
+        'Several convenience aliases are also recognized: @yearly and @annually (0 0 1 1 *), @monthly (0 0 1 * *), @weekly (0 0 * * 0), @daily and @midnight (0 0 * * *), @hourly (0 * * * *). These are expanded to their five-field equivalents before translation.',
+      ],
       useCases: [
-        'Sanity-checking a schedule before committing it to a CI config.',
-        'Translating a cron line in a legacy crontab so you can document or change it.',
-        'Explaining a deploy schedule to a non-engineer reviewer.',
+        'Sanity-checking a schedule before committing it to a GitHub Actions, GitLab, or Jenkins config.',
+        'Translating a cron line in a legacy crontab so you can document or modify it.',
+        'Explaining a deploy or backup schedule to a non-engineer reviewer.',
+        'Converting from "every other Tuesday" in human English into the cron expression you actually need.',
+        'Spotting an accidentally-too-frequent schedule (*/1 instead of */10) before it floods your queue.',
+        'Auditing a list of scheduled jobs to see when peak load will hit.',
+      ],
+      examples: [
+        {
+          title: 'Every weekday at 9 AM',
+          input: '0 9 * * 1-5',
+          output: 'At 09:00, Monday through Friday',
+          note: 'Minute 0, hour 9, any day-of-month, any month, weekday 1 through 5.',
+        },
+        {
+          title: 'Every 15 minutes during business hours',
+          input: '*/15 9-17 * * 1-5',
+          output: 'Every 15 minutes between 09:00 and 17:00, Monday through Friday',
+          note: 'The step */15 means "every 15 starting at 0", so it fires at :00, :15, :30, :45 of each listed hour.',
+        },
+        {
+          title: 'First day of the month at midnight',
+          input: '0 0 1 * *',
+          output: 'At 00:00 on the 1st of every month',
+          note: 'Same as @monthly.',
+        },
       ],
       gotchas: [
-        'Quartz-style 6- or 7-field cron (with seconds and year) is not supported here — this is the Vixie/POSIX dialect.',
-        'A literal `?` is not handled. Leave it as `*` for compatibility with the standard 5-field form.',
+        'Quartz-style 6- or 7-field cron (with seconds and year) is a different dialect; it is not supported here. Most cloud schedulers and Linux cron use the 5-field form this tool targets.',
+        'The day-of-month and day-of-week fields are joined with OR, not AND, when both are non-wildcard. "0 0 1 * 1" fires on the 1st AND every Monday, not only on Mondays that are the 1st.',
+        'A literal ? in Quartz means "no specific value" — Vixie/POSIX cron does not understand it. Replace it with * for compatibility.',
+        'The schedule fires in whatever time zone the scheduler thinks is "local". On a server in UTC, "0 9 * * *" fires at 9 AM UTC, which may not be when your users in another zone expect.',
+        'Heavy step values can surprise: */45 in the minute field fires at :00 and :45, not at :45 and then 45 minutes later. Steps always anchor at the start of the range.',
+        'Many cron daemons skip a missed run if the host was down at that minute. Use a job framework (Sidekiq cron, Cloud Scheduler with retries) if missed runs matter.',
+      ],
+      faq: [
+        {
+          q: 'What does each * stand for again?',
+          a: 'In order: minute, hour, day-of-month, month, day-of-week. So * * * * * means "every minute of every hour of every day of every month, on every day of the week" — i.e. once a minute, forever.',
+        },
+        {
+          q: 'How do I express "every Sunday at 3 AM"?',
+          a: '0 3 * * 0 or 0 3 * * 7 — both 0 and 7 are accepted for Sunday. The day-of-week column is a single digit per day, where Monday is 1.',
+        },
+        {
+          q: 'Why does my "first Monday of the month" expression behave weirdly?',
+          a: 'Standard 5-field cron cannot express "first weekday of the month" directly. The cleanest workaround is to fire on every Monday with 0 0 * * 1 and have the job itself check whether the day-of-month is 7 or less.',
+        },
+        {
+          q: 'What time zone does cron use?',
+          a: 'Whatever zone the scheduling process treats as local. On most Linux systems, that is set by /etc/localtime. Cloud schedulers usually let you pick a zone explicitly. If in doubt, write the expression in UTC and document it.',
+        },
+        {
+          q: 'What is the shortest interval cron supports?',
+          a: 'One minute. For sub-minute schedules you need a different system: a long-running worker that polls, a queue with delayed jobs, or a scheduler like systemd timers that supports seconds.',
+        },
       ],
     },
   },
@@ -915,15 +1377,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Generates bcrypt hashes with a chosen cost factor (4–14) using bcryptjs in WebAssembly. Verify mode lets you confirm a password matches an existing `$2a$…` hash without sending either to a server.',
+        'Bcrypt is the password-hashing function that has been the safe default for storing user passwords for over twenty years. It is deliberately slow, includes a per-password salt built into the output string, and has a tunable cost factor so you can make it slower as hardware gets faster. This tool generates bcrypt hashes for any password you type in, lets you verify a password against an existing $2a$, $2b$ or $2y$ hash, and runs entirely in your browser via bcryptjs — neither the password nor the hash is ever sent anywhere.',
+      howItWorks: [
+        'Bcrypt is built on the Blowfish key schedule. The cost factor is a number from 4 to 31, and each step up roughly doubles the work required to compute one hash. A cost of 12 means 2^12 = 4096 rounds of the key schedule, which on a modern server takes around 250 ms.',
+        'Every bcrypt output is a self-contained string in the format $2a$<cost>$<22-char-salt><31-char-hash>. The cost and salt are baked in, so verification needs only the candidate password and the stored hash — there is no separate salt column.',
+        'Verification runs the same algorithm on the candidate password with the cost and salt extracted from the stored hash, then compares the result in constant time. If the candidate produces the same trailing hash, the password is correct.',
+      ],
       useCases: [
-        'Setting up a seed user in a fresh database — paste the generated hash directly.',
-        'Debugging a login flow where a hash from one library doesn\'t verify in another.',
-        'Picking a cost factor for production by feeling how long each step actually takes in your environment.',
+        'Setting up a seed user in a fresh database with a known password by pasting the generated hash into your migration.',
+        'Debugging a login flow where a hash produced by one library refuses to verify in another (often a $2b vs $2y prefix mismatch — both work).',
+        'Picking a cost factor for production by feeling how long each step actually takes in your stack.',
+        'Reproducing a customer-reported "wrong password" bug by verifying their stored hash against the password they typed.',
+        'Confirming that a CSV of legacy bcrypt hashes can still be verified before you accept it during a migration.',
+        'Teaching the basics of password hashing without putting any real passwords at risk.',
+      ],
+      examples: [
+        {
+          title: 'Generate a hash at cost 12',
+          input: 'Password: correct horse battery staple\nCost: 12',
+          output:
+            '$2b$12$EXRkfkdmXn2gzds2SSitu.MW9.gAVqa9eLS1//RYtYCmB1eLHkku6',
+          note: 'The $2b prefix is the modern bcrypt identifier. $2a and $2y are interchangeable for verification.',
+        },
+        {
+          title: 'Verify a password against a stored hash',
+          input:
+            'Password: correct horse battery staple\nHash: $2b$12$EXRkfkdmXn2gzds2SSitu.MW9.gAVqa9eLS1//RYtYCmB1eLHkku6',
+          output: 'Valid ✓',
+          note: 'The verifier extracts the cost and salt from the hash and re-runs the algorithm on the candidate.',
+        },
       ],
       gotchas: [
-        'Bcrypt truncates at 72 bytes. Long passphrases get silently shortened.',
-        'Browser bcrypt is slower than native — production cost factor decisions should match the runtime that actually verifies, not the browser.',
+        'Bcrypt truncates input at 72 bytes. Long passphrases get silently shortened, meaning two different passphrases sharing the first 72 bytes will hash identically. Either limit input length or pre-hash with SHA-256 before bcrypting.',
+        'Browser bcrypt is slower than native — sometimes 2–3x slower at the same cost factor. Pick cost based on the runtime that will actually verify in production, not the cost that feels right in this tester.',
+        'The $2a, $2b, $2y prefixes have a tangled history. Modern libraries verify all three interchangeably, but a library that only accepts $2y will refuse a $2b hash. If verification fails, normalize the prefix.',
+        'A cost factor that was safe in 2015 is borderline now. As of 2026, cost 12 is the conservative floor for most apps; 13–14 if you can afford the latency. Re-hash on next login when you bump the cost.',
+        'Bcrypt salts are 16 bytes encoded as 22 base64 characters. Generating a bcrypt hash with your own salt is rarely a good idea — let the library generate the salt.',
+      ],
+      faq: [
+        {
+          q: 'What cost factor should I use?',
+          a: 'Target around 250–500 ms per hash on the hardware that will actually verify. As of 2026, that is roughly cost 12 on commodity cloud CPUs. If your servers are faster, go up; if they are constrained, go down but never below 10 for live users.',
+        },
+        {
+          q: 'Is bcrypt still good in 2026, or should I switch to argon2?',
+          a: 'Bcrypt is still considered safe and is the OWASP-recommended floor. Argon2id is the modern recommendation if you are starting fresh — it adds memory hardness, which makes GPU attacks much more expensive. Both are vastly better than raw SHA or PBKDF2 at low iteration counts.',
+        },
+        {
+          q: 'Why is bcrypt slow on purpose?',
+          a: 'A password hash that takes 1 ms to compute lets an attacker who steals your database test billions of guesses per second. A hash that takes 250 ms cuts that to 4 per second per core. The slowness is the security feature.',
+        },
+        {
+          q: 'Can I migrate from MD5 or SHA-1 to bcrypt without forcing a password reset?',
+          a: 'Yes. Store the old hash, and on the next successful login, hash the password with bcrypt and replace the old value. Once everyone has logged in (or after a deadline), force a reset for the stragglers.',
+        },
+        {
+          q: 'Is bcrypt FIPS-approved?',
+          a: 'No. If you need FIPS 140 compliance, PBKDF2 with SHA-256 and a high iteration count is the usual choice. Bcrypt is otherwise the safer option for typical web apps.',
+        },
       ],
     },
   },
