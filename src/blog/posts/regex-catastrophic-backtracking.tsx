@@ -65,6 +65,55 @@ Input:   aaaaaaaaaaaaaaaaaaaaaaaaab`}</code>
         outer <code>+</code> before reporting failure.
       </p>
 
+      <div className="my-6 rounded-lg border border-border bg-surface-2 p-4 sm:p-6">
+        <div className="flex justify-center">
+          <svg
+            viewBox="0 0 620 280"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Time growth: linear regex versus exponential regex"
+            className="w-full max-w-full h-auto"
+          >
+            <title>Linear vs exponential regex time</title>
+            <g fontFamily="ui-monospace, monospace" fontSize="11">
+              <line x1="70" y1="240" x2="600" y2="240" stroke="currentColor" strokeOpacity="0.5" />
+              <line x1="70" y1="20" x2="70" y2="240" stroke="currentColor" strokeOpacity="0.5" />
+
+              <text x="50" y="30" textAnchor="end" fill="currentColor" opacity="0.7">time</text>
+              <text x="595" y="260" textAnchor="end" fill="currentColor" opacity="0.7">input length</text>
+
+              <line x1="65" y1="180" x2="75" y2="180" stroke="currentColor" strokeOpacity="0.4" />
+              <text x="60" y="184" textAnchor="end" fill="currentColor" opacity="0.6" fontSize="10">ms</text>
+              <line x1="65" y1="100" x2="75" y2="100" stroke="currentColor" strokeOpacity="0.4" />
+              <text x="60" y="104" textAnchor="end" fill="currentColor" opacity="0.6" fontSize="10">sec</text>
+              <line x1="65" y1="40" x2="75" y2="40" stroke="currentColor" strokeOpacity="0.4" />
+              <text x="60" y="44" textAnchor="end" fill="currentColor" opacity="0.6" fontSize="10">min</text>
+
+              <line x1="200" y1="235" x2="200" y2="245" stroke="currentColor" strokeOpacity="0.4" />
+              <text x="200" y="260" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="10">10</text>
+              <line x1="330" y1="235" x2="330" y2="245" stroke="currentColor" strokeOpacity="0.4" />
+              <text x="330" y="260" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="10">20</text>
+              <line x1="460" y1="235" x2="460" y2="245" stroke="currentColor" strokeOpacity="0.4" />
+              <text x="460" y="260" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="10">30</text>
+              <line x1="590" y1="235" x2="590" y2="245" stroke="currentColor" strokeOpacity="0.4" />
+              <text x="590" y="260" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="10">40</text>
+
+              <path d="M 70 240 L 600 215" fill="none" stroke="#22d3ee" strokeWidth="2.5" />
+              <text x="490" y="210" fill="#22d3ee" fontWeight="bold">linear: ^a+$</text>
+
+              <path d="M 70 240 Q 230 240 350 220 Q 430 195 470 140 Q 500 80 520 25" fill="none" stroke="#fb923c" strokeWidth="2.5" />
+              <text x="320" y="120" fill="#fb923c" fontWeight="bold">exponential: ^(a+)+$</text>
+
+              <line x1="460" y1="235" x2="460" y2="55" stroke="#fb923c" strokeOpacity="0.3" strokeDasharray="3 3" />
+              <text x="455" y="50" textAnchor="end" fill="#fb923c" fontSize="10">tab hangs around 30 chars</text>
+            </g>
+          </svg>
+        </div>
+        <div className="text-xs text-subtle mt-3 text-center font-mono">
+          Linear regex stays flat. Exponential doubles per input character — 40 chars is hours.
+        </div>
+      </div>
+
       <h2>The real-world patterns that bite</h2>
 
       <p>

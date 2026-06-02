@@ -1,0 +1,51 @@
+{
+  "name": "debugdaily — Developer Tools",
+  "short_name": "debugdaily",
+  "description": "Free online toolkit for developers, DevOps engineers, and sysadmins. 80+ tools — JSON, JWT, regex, DNS, SSL, cron, bcrypt, more.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "categories": ["developer", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "JSON Formatter",
+      "url": "/tools/json-format"
+    },
+    {
+      "name": "JWT Decoder",
+      "url": "/tools/jwt-decode"
+    },
+    {
+      "name": "Regex Tester",
+      "url": "/tools/regex-tester"
+    },
+    {
+      "name": "Password Generator",
+      "url": "/tools/password-generator"
+    }
+  ]
+}

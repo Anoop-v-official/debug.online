@@ -11,6 +11,7 @@ import { Blog } from './pages/Blog';
 import { BlogPost } from './pages/BlogPost';
 import { CommandPalette } from './components/CommandPalette';
 import { CookieBanner } from './components/CookieBanner';
+import { InstallBanner } from './components/InstallBanner';
 import { AdSenseScript } from './components/AdSenseScript';
 import { useHistoryStore } from './store/history';
 import { tools } from './lib/tools';
@@ -113,6 +114,7 @@ export function App() {
         }}
       />
       {!isTauri ? <CookieBanner /> : null}
+      {!isTauri ? <InstallBanner /> : null}
       {!isTauri ? <AdSenseScript /> : null}
     </Layout>
   );

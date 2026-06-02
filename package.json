@@ -14,6 +14,7 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@peculiar/x509": "^2.0.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "@tauri-apps/plugin-global-shortcut": "^2.3.1",
@@ -21,6 +22,7 @@
     "framer-motion": "^11.5.4",
     "js-yaml": "^4.1.1",
     "lucide-react": "^1.14.0",
+    "mermaid": "^11.15.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -620,15 +620,62 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Parses a color in any of the common CSS notations and converts it to all three. Renders a live swatch so you can sanity-check the result.',
+        'Parses any CSS color (HEX, shorthand HEX, rgb(), hsl()) and converts it to all three notations at once, with a live swatch so you can visually verify the result. Useful for translating designer hand-offs into CSS variables, building tint/shade scales, or just confirming what `hsl(140, 100%, 50%)` actually looks like.',
+      howItWorks: [
+        'On every change, the input is normalized into a canonical RGB triple. HEX is decoded directly; rgb() and hsl() are parsed with permissive regexes that tolerate whitespace, percent vs absolute values, and the older comma-separated forms.',
+        'From RGB, conversion to HSL uses the standard CSS color space formula: the dominant channel determines the hue, max minus min gives saturation, and the average of max and min gives lightness. Rounding to integer percentages keeps the output readable, at the cost of a tiny precision loss on round-trips.',
+        'The swatch is just a div whose background is the parsed color, rendered using the browser\'s native CSS parser as a final sanity check. If the swatch looks wrong, the input was wrong.',
+      ],
       useCases: [
-        'Translating a designer\'s HEX into HSL so you can build a tint/shade scale.',
-        'Quickly checking what `rgb(0, 255, 136)` looks like.',
+        'Translating a designer\'s HEX into HSL so you can build a tint/shade scale by varying lightness.',
+        'Quickly checking what `rgb(0, 255, 136)` looks like without opening a design tool.',
         'Normalizing color values between a Figma export and a CSS variable file.',
+        'Picking a complementary color by rotating the hue 180° in HSL.',
+        'Confirming that a hex code in a brand guidelines doc matches the rgb() you have in your stylesheet.',
+        'Debugging why a CSS variable looks slightly off — usually a hex/rgb round-trip rounding issue.',
+      ],
+      examples: [
+        {
+          title: 'HEX to HSL',
+          input: '#00ff88',
+          output: 'rgb(0, 255, 136)\nhsl(152, 100%, 50%)',
+          note: 'The bright green used as this site\'s accent color. HSL makes "same hue, darker" easy: change the 50% to 35%.',
+        },
+        {
+          title: 'Shorthand HEX',
+          input: '#abc',
+          output: '#aabbcc\nrgb(170, 187, 204)\nhsl(210, 25%, 73%)',
+          note: 'Three-digit hex expands each digit (a → aa). #abc and #aabbcc are identical.',
+        },
       ],
       gotchas: [
-        'HSL conversion rounds to integer percentages, so a perfect round-trip back to the original RGB is not guaranteed.',
-        'Alpha is not currently parsed — the alpha channel of `rgba()`/`hsla()` inputs is ignored.',
+        'HSL conversion rounds to integer percentages, so a perfect round-trip back to the original RGB is not guaranteed — you may see #00ff88 → hsl(152, 100%, 50%) → rgb(0, 255, 137), one off.',
+        'Alpha (transparency) is parsed as part of the input recognition but the conversion output focuses on the opaque color. To work with alpha precisely, use a dedicated rgba/hsla form.',
+        'HSL hue is on a 0–360° wheel — 0 and 360 are both red. Some tools display 0–100 for hue (Photoshop-style); those values are not interchangeable with CSS hsl().',
+        'Saturation and lightness in HSL are not perceptually uniform. Halving the lightness does not produce a color half as bright to the human eye. For perceptual color work, use OKLCH (modern CSS) instead of HSL.',
+        'Web browsers historically disagreed on edge cases in rgb() parsing. The CSS Color Module Level 4 specifies the canonical behavior; modern browsers all agree, but be careful about legacy stylesheets.',
+      ],
+      faq: [
+        {
+          q: 'What is the difference between HSL and HSB / HSV?',
+          a: 'HSL has lightness on a 0–100 scale where 50 is the pure color, 0 is black and 100 is white. HSB/HSV has brightness where 0 is black and 100 is the pure color. Photoshop uses HSB; CSS uses HSL. The hue and saturation share the same conventions.',
+        },
+        {
+          q: 'Why does hex sometimes have 4 or 8 digits?',
+          a: 'Four-digit hex (#rgba) is shorthand for an RGBA color with one digit per channel. Eight-digit hex (#rrggbbaa) is the long form. The last two digits are alpha — 00 = transparent, ff = opaque.',
+        },
+        {
+          q: 'What is OKLCH and should I use it?',
+          a: 'OKLCH is a perceptually uniform color space introduced in CSS Color Level 4. Equal numeric steps in OKLCH look like equal visual steps, which makes it much better than HSL for designing color systems. Modern browsers support oklch() natively.',
+        },
+        {
+          q: 'My HSL conversion is slightly different from someone else\'s. Why?',
+          a: 'Different tools round at different stages. Some round to nearest integer at each step; some round only at the end. Differences of 1° in hue or 1% in saturation/lightness are common and visually imperceptible.',
+        },
+        {
+          q: 'Does this work for named CSS colors like "tomato"?',
+          a: 'Named color support is not currently implemented. Use the hex equivalent (tomato = #ff6347) or paste the rgb() form.',
+        },
       ],
     },
   },
@@ -997,15 +1044,65 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Queries the public 1.1.1.1 / 8.8.8.8 resolvers from our server for the record type you choose. Returns each answer with its TTL (and priority for MX).',
+        'Queries the major public DNS-over-HTTPS resolvers (Cloudflare 1.1.1.1, Google 8.8.8.8) for any record type you pick — A, AAAA, MX, TXT, NS, CNAME, SOA, CAA, SRV, PTR — and shows each answer with its TTL. Useful when debugging email deliverability, propagation after a record change, CDN routing, or just confirming that a domain points where you think it does.',
+      howItWorks: [
+        'A DNS-over-HTTPS query is an HTTPS GET or POST to the resolver carrying the question (hostname + record type) in either binary wire format or JSON. The resolver does the actual recursive resolution and returns the answer set.',
+        'For each record in the answer, the tool shows the data and the TTL. The TTL value you see is the time-to-live the upstream resolver caches the record for, not necessarily the authoritative TTL — once a record has been in cache for 30 seconds, the TTL returned to you is 30 seconds less than the authoritative one.',
+        'MX records carry a priority (preference) number. SRV records carry priority, weight, port and target. The tool surfaces these alongside the data so you do not have to know the wire format by heart.',
+      ],
       useCases: [
         'Confirming that an SPF or DKIM TXT record is published before mail starts bouncing.',
-        'Verifying that a DNS change has propagated past local caches.',
-        'Tracing why a domain resolves differently than you expect.',
+        'Verifying that a DNS change has propagated past local resolver caches.',
+        'Tracing why a domain resolves to a different IP for your client than for production.',
+        'Checking the CAA record set before requesting a certificate, so you do not get an unexpected refusal.',
+        'Auditing nameserver delegation when you switch DNS providers.',
+        'Spotting a stray AAAA record pointing at an unmanaged IPv6 address.',
+      ],
+      examples: [
+        {
+          title: 'Resolve MX for a domain',
+          input: 'example.com, type MX',
+          output:
+            '10  mx1.example-mail.com.\n20  mx2.example-mail.com.',
+          note: 'Lower priority numbers are preferred. 10 is tried before 20.',
+        },
+        {
+          title: 'Read an SPF record',
+          input: 'example.com, type TXT',
+          output:
+            '"v=spf1 include:_spf.google.com ~all"\n"google-site-verification=…"',
+          note: 'TXT records often contain multiple unrelated strings. The first quoted string is the actual value; everything from "google-site" onward is verification metadata.',
+        },
       ],
       gotchas: [
-        'TTLs returned here reflect upstream resolver caching, not your authoritative TTL.',
-        'CNAMEs at the apex are illegal per RFC; use ALIAS/ANAME or an A record instead.',
+        'TTLs returned here reflect upstream resolver caching, not your authoritative TTL. A fresh authoritative answer can still appear with a short TTL because the resolver dropped most of the cached value.',
+        'CNAMEs at a zone apex (example.com itself, not www.example.com) are illegal per RFC 1034. Use ALIAS/ANAME records if your DNS provider offers them, or a flat A record.',
+        'Negative answers (NXDOMAIN, NOERROR with no records) are also cached — by default for 5 minutes. A failed lookup right after a delete may still show the old record from cache.',
+        'EDNS Client Subnet (ECS) can cause different resolvers to return different IPs because the answer is region-specific. If your customer in Singapore is hitting a US edge node, ECS may be why.',
+        'A TXT record longer than 255 characters is split into multiple quoted strings on the wire. Resolvers concatenate them — but some parsers see only the first chunk. Long DKIM keys are the common failure.',
+        'DNS is not always immediately consistent. A record can be updated authoritatively but still take TTL time to propagate. Lowering the TTL before a planned change is the textbook workaround.',
+      ],
+      faq: [
+        {
+          q: 'Why does my DNS change show up here but not on my laptop?',
+          a: 'Your laptop is using a different resolver (often your ISP or your router), which has its own cache. This tool queries 1.1.1.1 and 8.8.8.8 directly. Wait until the TTL on the old record expires, or flush your local cache.',
+        },
+        {
+          q: 'What is the difference between A and AAAA?',
+          a: 'A records map a hostname to an IPv4 address (4 bytes). AAAA records map to an IPv6 address (16 bytes). A modern host has both; clients pick which one to use based on Happy Eyeballs.',
+        },
+        {
+          q: 'Why are there multiple NS records?',
+          a: 'A zone needs at least two nameservers for redundancy. The order of NS records returned varies (round-robin) — there is no "primary" from the client\'s perspective.',
+        },
+        {
+          q: 'Can I do a reverse DNS lookup?',
+          a: 'Yes — query the PTR record for the special arpa form of the IP (e.g., 8.8.8.8 → 8.8.8.8.in-addr.arpa). Most modern resolvers also accept the IP directly for convenience.',
+        },
+        {
+          q: 'Does this support DNSSEC validation?',
+          a: 'Both Cloudflare and Google resolvers validate DNSSEC by default — if a domain fails DNSSEC, you will get a SERVFAIL. This tool does not surface DNSSEC status separately; use dig +dnssec for that.',
+        },
       ],
     },
   },
@@ -1023,15 +1120,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Opens a TLS connection to port 443 of the given host and reports the leaf certificate. The "Days left" field is colored — green > 14, yellow under 14, red if expired.',
+        'Opens a TLS connection to port 443 of any host you point it at and reports the leaf certificate the server presents. You get subject, issuer, validity window, days remaining, subject alternative names and a colored expiry badge — green if there is more than two weeks of validity left, amber under two weeks, red if the cert has already expired. The actual TCP/TLS handshake runs from our edge function, not your browser, because browsers cannot speak raw TLS to arbitrary hosts.',
+      howItWorks: [
+        'When you submit a hostname, an edge function opens a TCP socket to host:443, performs a TLS handshake with SNI set to that hostname, captures the leaf certificate from the ServerHello, and closes the connection without sending any application data.',
+        'The leaf cert is parsed with a real X.509 parser to extract the standard fields. Validity is compared against the current server time to compute days remaining. Subject alternative names are pulled from the SAN extension because the CN field is legacy.',
+        'No payload is sent over the connection. Logs record only the hostname, the resolved IP, and the result — useful for rate-limiting and abuse prevention, not for tracking certificate contents.',
+      ],
       useCases: [
-        'Setting up a renewal reminder before a cert silently expires on a Sunday.',
-        'Confirming a freshly issued cert covers the SANs you asked for.',
-        'Spotting a misconfigured load balancer that\'s still serving an old cert.',
+        'Setting up a renewal reminder before a cert silently expires at 03:00 on a Sunday and pages you.',
+        'Confirming a freshly issued cert covers the SANs you actually asked for.',
+        'Spotting a misconfigured load balancer that is still serving the old cert after rotation.',
+        'Verifying that a CDN edge node is serving the same cert as your origin.',
+        'Cross-checking the SHA-256 fingerprint your monitoring expects (certificate pinning).',
+        'Auditing a portfolio of domains for upcoming expiries without writing a script.',
+      ],
+      examples: [
+        {
+          title: 'Healthy certificate',
+          input: 'example.com',
+          output:
+            'Subject: CN=example.com\nIssuer: CN=R3, O=Let\'s Encrypt\nValid: 2026-01-15 → 2026-04-15\nDays left: 67 (green)\nSAN: example.com, www.example.com',
+          note: 'The colored badge gives an at-a-glance "do I need to worry" signal.',
+        },
+        {
+          title: 'About to expire',
+          input: 'staging.example.com',
+          output: 'Days left: 8 (amber) — renew this week.',
+          note: 'Real automation: pair with a cron-driven check and alert when amber turns red.',
+        },
       ],
       gotchas: [
-        'This checks the leaf, not the full chain trust. A cert can be valid here but rejected by clients with a stricter root store.',
-        'SNI is sent — virtual-hosted certificates depend on the hostname matching exactly.',
+        'This checks the leaf certificate, not the full chain of trust. A cert can be perfectly valid here but rejected by clients with a stricter root store (older Java, embedded devices, some Linux distros).',
+        'SNI is sent — virtual-hosted servers pick the cert based on the hostname you type, so a typo can result in inspecting the wrong cert (often the platform default).',
+        'Hosts that require a client certificate, mTLS, or have IP allow-listed will refuse the connection. The error message is generic on purpose; do not interpret connection failures as cert problems.',
+        'A cert can list a hostname in SAN without that hostname actually resolving to the server. The check confirms what the cert says, not whether DNS agrees with it.',
+        'Wildcard certificates (*.example.com) cover one level of subdomain only — *.example.com does not cover deep.sub.example.com. The tool shows the wildcard literally; interpret accordingly.',
+      ],
+      faq: [
+        {
+          q: 'Does this work for HTTPS hosts on non-standard ports?',
+          a: 'The tool defaults to port 443. If you need to check a TLS endpoint on a different port (8443, 4443), specify host:port. The handshake works the same; only the connection target changes.',
+        },
+        {
+          q: 'How is this different from `openssl s_client`?',
+          a: 'It does roughly what openssl s_client -connect host:443 -servername host would, then pretty-prints the result. For interactive certificate debugging on an internal host, openssl is more flexible. For a quick check from outside your network, this is faster.',
+        },
+        {
+          q: 'Why does the expiry show a different date than my CA dashboard?',
+          a: 'CA dashboards usually display issuance and renewal dates. The cert itself carries notBefore and notAfter, and the server may not have rotated to a newly-issued cert yet. This tool reads what the server is actually serving right now.',
+        },
+        {
+          q: 'Does it warn about weak signatures or short keys?',
+          a: 'The X.509 decoder tool surfaces the signature algorithm and key length. SSL Check focuses on validity and naming. For a full security grade (TLS versions accepted, cipher suites, OCSP stapling), use SSL Labs.',
+        },
+        {
+          q: 'Can I check a private host?',
+          a: 'Only hosts reachable from the public internet. For a server inside a VPC or behind a firewall, run openssl from a jump host or use a private monitoring agent.',
+        },
       ],
     },
   },
@@ -1075,11 +1220,71 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Browsable, searchable list of every HTTP status code your API is likely to emit, with a one-line explanation and a class label.',
+        'A browsable, searchable reference of every HTTP status code your API is realistically going to emit, with a plain-English explanation and a class label (informational, success, redirect, client error, server error). Useful for settling team debates, documenting API contracts, and decoding the otherwise-cryptic numbers your monitoring sends you at 3 AM.',
+      howItWorks: [
+        'HTTP defines five status classes by the first digit: 1xx (informational, rare in practice), 2xx (success), 3xx (redirect), 4xx (client made a mistake), 5xx (server has a problem). The exact code within a class refines the meaning so the caller can react programmatically.',
+        'The tool indexes every code by number, official IANA name, common alternate names, and a one-line meaning. Search matches against all of those, so typing "missing" or "auth" or "418" all find what you would expect.',
+        'For status codes with subtle distinctions (401 vs 403, 502 vs 504), the entries include the discriminating question — "is this about identity (401) or permission (403)?" — so you can pick correctly when designing an API.',
+      ],
       useCases: [
-        'Settling a debate on whether to return 401 or 403.',
+        'Settling a team debate on whether to return 401 or 403 for "this user does not own the resource".',
         'Documenting an API contract with the right code per failure mode.',
-        'Looking up an unfamiliar code from a server log.',
+        'Looking up an unfamiliar code from a server log without leaving the terminal mentally.',
+        'Picking the right redirect code when an endpoint moves (301 vs 308 vs 307).',
+        'Deciding whether to return 409 or 422 for a validation failure on POST.',
+        'Confirming whether a CDN-introduced 522 or 524 is your problem or theirs.',
+      ],
+      examples: [
+        {
+          title: '401 vs 403',
+          input: '401, 403',
+          output:
+            '401 Unauthorized — caller did not prove who they are.\n403 Forbidden — caller proved who they are, but is not allowed.',
+          note: 'Litmus test: would a valid token change the answer? Yes → 401. No → 403.',
+        },
+        {
+          title: '301 vs 308',
+          input: '301, 308',
+          output:
+            '301 Moved Permanently — historically allowed clients to switch POST to GET.\n308 Permanent Redirect — same semantics but POST must remain POST.',
+          note: 'For permanent redirects of non-GET methods, prefer 308.',
+        },
+        {
+          title: '502 vs 504',
+          input: '502, 504',
+          output:
+            '502 Bad Gateway — your upstream returned an invalid response.\n504 Gateway Timeout — your upstream did not respond in time.',
+          note: 'Same proxy layer, different upstream behavior. Logging both with the upstream name pins down which service is sick.',
+        },
+      ],
+      gotchas: [
+        'Not every status code in the spec is appropriate for production use. 418 I\'m a teapot is a real registered code, but emitting it tells the world you are joking. Stick to the dozen-or-so codes your API actually needs.',
+        '204 No Content has a body of literally zero bytes. Returning 204 with a JSON body violates the spec — some clients (most browsers, fetch) will discard the body silently.',
+        '429 Too Many Requests should include a Retry-After header. Without it, clients have no idea when to back off.',
+        '500 Internal Server Error is a tempting catch-all but tells your client nothing. Aim for more specific codes (502, 503, 504) when you can.',
+        'Browsers cache 301 and 308 aggressively. If you redirect by mistake and ship the fix five minutes later, users will still hit the old redirect for days. Test redirects with curl before deploying.',
+      ],
+      faq: [
+        {
+          q: 'What is the difference between 401 and 403?',
+          a: '401 means the request had no credentials or invalid credentials. 403 means the request had valid credentials, but the authenticated identity is not allowed to do this thing. The browser will prompt for credentials on a 401 but not a 403.',
+        },
+        {
+          q: 'When should I use 422 vs 400?',
+          a: 'Use 400 when the request is malformed at the protocol level — missing required headers, invalid JSON, unparseable. Use 422 when the request parsed cleanly but failed business validation (email already in use, age below 18).',
+        },
+        {
+          q: 'Is 201 always the right success code for POST?',
+          a: 'Only when the POST created a new resource. If POST triggers an action with no created entity (sending an email, kicking off a job), 200 with a result body or 202 Accepted (for async) is more accurate.',
+        },
+        {
+          q: 'When do I use 503 vs 500?',
+          a: '503 Service Unavailable signals a transient problem — overloaded, in maintenance, dependency down — and clients should retry. 500 Internal Server Error signals an unexpected bug, and retries probably will not help. Pair 503 with a Retry-After header.',
+        },
+        {
+          q: 'Are 3xx codes really redirects?',
+          a: 'Most are. 304 Not Modified is the odd one out — it tells the client the cached version is still fresh. 300 Multiple Choices exists but is rarely used.',
+        },
       ],
     },
   },
@@ -1097,15 +1302,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Uses crypto.getRandomValues for true randomness. Switch between random character passwords and human-readable passphrases. The strength meter rates the result by entropy, not just length.',
+        'Generates cryptographically random passwords or readable passphrases entirely in your browser, backed by the same CSPRNG (crypto.getRandomValues) you would use in production code. Nothing is uploaded, logged, or remembered between sessions. The strength meter rates output by entropy — the actual measure of how hard the result is to guess — not by superficial rules like "must contain a digit".',
+      howItWorks: [
+        'crypto.getRandomValues fills a Uint8Array with bytes from the OS-level CSPRNG: getrandom on Linux, BCryptGenRandom on Windows, SecRandomCopyBytes on macOS. This is the same source TLS uses for session keys, so the randomness is good enough for any password.',
+        'For character passwords, each random byte is mapped to a position in your chosen alphabet (letters + digits + symbols, with optional similar-character exclusion for I/l/1, O/0). Bytes that would bias the distribution are discarded and re-drawn, so every character in the output is uniformly random.',
+        'For passphrases, the tool picks N words uniformly at random from a wordlist (typically the EFF large list of ~7,776 words). Each word adds about 12.9 bits of entropy, so a 5-word passphrase carries ~64 bits — equivalent to a 12-character random alphanumeric password but far easier to type and remember.',
+      ],
       useCases: [
-        'Spinning up a new admin account where you need a secret you won\'t reuse.',
-        'Generating a memorable passphrase for SSH key encryption or a 1Password vault.',
+        'Spinning up a new admin account where you need a secret you will not reuse anywhere else.',
+        'Generating a memorable passphrase for SSH key encryption, an age key, or a 1Password vault.',
         'Producing a non-rotatable secret for an internal service or a CI runner.',
+        'Seeding test fixtures with realistic but disposable credentials.',
+        'Replacing the default "admin/admin" on a freshly installed appliance with something that survives a Shodan scan.',
+        'Generating a Wi-Fi password long enough that nobody bothers brute-forcing it.',
+      ],
+      examples: [
+        {
+          title: '20-character mixed password',
+          input: 'Length: 20, letters + digits + symbols',
+          output: 'qX7$wPmZ2tLh!9aR@nKv',
+          note: 'About 131 bits of entropy. Computationally infeasible to brute-force at any scale that exists today.',
+        },
+        {
+          title: '6-word EFF passphrase',
+          input: 'Mode: passphrase, 6 words',
+          output: 'crouton bandstand wreckage chaplain blaze prelaunch',
+          note: 'About 77 bits of entropy. Easier to type than the random version above, and only marginally weaker.',
+        },
       ],
       gotchas: [
-        'Length matters more than complexity. A 20-character random string already exceeds most attack budgets.',
-        'Don\'t reuse generated values across services — that defeats the point of generating them.',
+        'Length matters more than complexity. A 20-character random string already exceeds the search budget of every attacker on Earth combined. Adding a sixth special character to a 10-character password barely moves the needle compared to adding two random letters.',
+        'Do not reuse generated values across services — that defeats the entire point of generating them. Pair this tool with a password manager.',
+        'Strength meters that count "uppercase, lowercase, digit, special" are not measuring real strength. Entropy is the right metric. Two zxcvbn-style libraries can disagree by several bits on the same input; treat ratings as guidance, not gospel.',
+        'Passphrases survive shoulder-surfing better than random passwords because the words come from a public wordlist — knowing the list does not help an attacker guess your specific draw.',
+        'Some services silently truncate passwords past 64 or 72 characters. If a generated value is long, do a round-trip login test before relying on it.',
+        'Storing the output of this generator anywhere other than a real password manager (1Password, Bitwarden, KeePass) defeats the security benefit. A note in Slack is not safe.',
+      ],
+      faq: [
+        {
+          q: 'Is the generator really random?',
+          a: 'Yes — it uses the same OS-level CSPRNG that TLS, ssh-keygen and openssl rand use. Math.random would not be safe; crypto.getRandomValues is.',
+        },
+        {
+          q: 'How long should my password be?',
+          a: 'At least 16 random characters or 5–6 EFF passphrase words for anything important. For email, banking, and anything that controls other accounts (password manager master, email-recovery account), prefer 20+ random or 7+ words.',
+        },
+        {
+          q: 'Random characters or passphrase — which is stronger?',
+          a: 'Per character of length, random wins. Per character of typing, passphrases win at the same security level. For interactive logins where you type the password regularly, passphrases are usually the better trade-off. For machine-only credentials, random is fine.',
+        },
+        {
+          q: 'Should I include symbols?',
+          a: 'Symbols add about 3 bits of entropy per character compared to alphanumeric. Useful when you are constrained to short lengths; not as important once your length is over 20. Some services still reject specific symbols, so check the policy before generating.',
+        },
+        {
+          q: 'Does the tool remember my passwords?',
+          a: 'No. Generated values live only in your tab and disappear when you navigate away. Copy what you need into a password manager immediately.',
+        },
       ],
     },
   },
@@ -1325,15 +1578,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Backed by js-yaml, the same parser used in many Node tools. Errors include line and column numbers so you can jump straight to the broken indentation.',
+        'Parses YAML in your browser using js-yaml — the same parser most Node-based tools use — and reports any errors with the exact line and column they occurred on. The result is shown as either re-formatted canonical YAML or pretty-printed JSON, so you can round-trip a Kubernetes manifest, a Docker Compose file, or a GitHub Actions workflow without leaving the page.',
+      howItWorks: [
+        'On every change, the YAML source is fed to js-yaml\'s load function with the FAILSAFE_SCHEMA, which means values are parsed strictly: no implicit type coercion (so "yes" stays a string, not a boolean), no custom tags, no anchors that resolve to surprises.',
+        'If parsing succeeds, the resulting JavaScript object is re-serialized — either back to YAML with consistent indentation and no editor-specific cruft, or to JSON for tools that do not speak YAML natively.',
+        'If parsing fails, the error object includes the offending line and column. The UI highlights the spot so you do not have to count indentation by eye.',
+      ],
       useCases: [
-        'Spotting why your Kubernetes manifest fails to apply because of a tab character.',
-        'Converting a YAML config to JSON for a script that doesn\'t parse YAML.',
-        'Re-flowing hand-edited YAML to canonical form before committing.',
+        'Spotting why your Kubernetes manifest fails to apply because of a tab character that the editor silently inserted.',
+        'Converting a YAML config to JSON for a script or service that does not parse YAML.',
+        'Re-flowing hand-edited YAML to canonical form before committing — no mixed indentation, no inconsistent quoting.',
+        'Validating a GitHub Actions or GitLab CI workflow before pushing it.',
+        'Checking that an anchor and alias (& and *) are pointing at what you think they are.',
+        'Confirming that a long string with embedded newlines uses the right block-scalar style (| vs >).',
+      ],
+      examples: [
+        {
+          title: 'YAML to JSON',
+          input: 'name: deploy\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest',
+          output:
+            '{\n  "name": "deploy",\n  "on": { "push": { "branches": ["main"] } },\n  "jobs": { "build": { "runs-on": "ubuntu-latest" } }\n}',
+          note: 'Note that "on" stays a string key (not coerced to a boolean) because we use the strict YAML 1.2 rules.',
+        },
+        {
+          title: 'A common indentation error',
+          input: 'foo:\n  bar: 1\n   baz: 2',
+          output: 'Error: bad indentation of a mapping entry (line 3, column 4)',
+          note: 'The "baz" line has three spaces instead of two, so YAML cannot decide which level it belongs to.',
+        },
       ],
       gotchas: [
-        'YAML 1.2 is followed strictly — "yes/no/on/off" parse as booleans only in 1.1 mode.',
-        'Anchors and merge keys (<<) are supported, but not all downstream YAML consumers are.',
+        'Tabs are not valid YAML indentation. An editor that auto-converted spaces to tabs (or pasted-in copy from a terminal) is the most common cause of "this looks fine but does not parse".',
+        'YAML 1.2 fixed the "Norway problem" — "no" is no longer auto-coerced to false. But many tools still ship YAML 1.1 parsers (Ansible historically, some Java libraries), so the same file can behave differently depending on who consumes it.',
+        'Anchors (&name) and aliases (*name) are part of the spec, but Kubernetes, GitHub Actions, and several other consumers reject them or expand them inconsistently. Stick to plain YAML when targeting those systems.',
+        'Long lines wrapped with > or | look similar but behave differently — | preserves newlines, > folds them into spaces. A Dockerfile RUN script under a > would lose every line break.',
+        'Document separators (---) split a single file into multiple YAML documents. Tools that read only the first document will silently ignore later ones.',
+        'JSON is technically valid YAML, so a JSON blob pasted here will parse — useful, but occasionally confusing when the YAML reformatter adds quotes back where you removed them.',
+      ],
+      faq: [
+        {
+          q: 'Is YAML strictly a superset of JSON?',
+          a: 'YAML 1.2 is, intentionally. Any valid JSON document is also valid YAML. This is the technical justification for tools that accept "YAML" actually accepting both.',
+        },
+        {
+          q: 'Why does "no" sometimes become false?',
+          a: 'YAML 1.1 included an implicit boolean alias list that maps yes/no/on/off/true/false to true/false. YAML 1.2 dropped that to fix the Norway country-code disaster. If your parser is 1.1, quote the literal string ("no") to keep it a string.',
+        },
+        {
+          q: 'What is the difference between |, >, |-, and >-?',
+          a: 'Block scalars. | keeps newlines, > folds them into spaces. A trailing - strips the final newline. So | is literal multi-line, > is paragraph-style, and the dash version trims trailing whitespace.',
+        },
+        {
+          q: 'My YAML is valid here but Kubernetes rejects it. Why?',
+          a: 'Kubernetes does its own validation against the resource schema after parsing. Common causes: wrong apiVersion, missing required field, or an indented value that parsed as the wrong type (a string where an int was expected).',
+        },
+        {
+          q: 'Does this tool support YAML directives or custom tags?',
+          a: 'It supports the standard %YAML directive and the core schema. Custom tags (!Ref in CloudFormation, !Vault in Ansible) are tool-specific and not part of pure YAML; this validator will reject them. Strip or convert them first.',
+        },
       ],
     },
   },
@@ -1628,15 +1930,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Server-side lookup against ip-api.com. Detects your own IP if no input is provided, or queries any public IP. Returns location, ISP/org, ASN, reverse DNS, and proxy/VPN/hosting flags.',
+        'Looks up any public IPv4 or IPv6 address and returns its approximate geolocation, ISP/organization, autonomous system number (ASN), reverse DNS, and a set of usage flags — whether the address belongs to a residential ISP, a hosting provider, a known VPN, or a Tor exit. Submit no input and it returns the lookup for your own client IP, which is how you check what an outbound service sees when your traffic arrives.',
+      howItWorks: [
+        'A server-side function takes the requested IP, queries a geolocation database (ip-api.com on the free tier), and forwards the structured answer back to your browser. The answer includes coordinates accurate to roughly the city level, the ASN as both number and human-readable org name, and several boolean flags.',
+        'For "look up my own IP", the function reads the request\'s source address (taking X-Forwarded-For chains into account) and uses that as the input. This is the IP a website actually sees you with — useful when you want to confirm a VPN is doing its job or that your egress NAT is pointed at the right pool.',
+        'Geolocation is database-driven, not protocol-driven. The accuracy depends on how recently the database has been updated for that allocation. ASN data, which comes from BGP, is more reliable.',
+      ],
       useCases: [
-        'Confirming where a suspicious connection is coming from in your access logs.',
-        'Verifying that your VPN is masking your real ISP.',
-        'Checking the ASN of a target IP before allow-listing it in a firewall.',
+        'Confirming where a suspicious connection in your access logs is actually coming from.',
+        'Verifying that your VPN is masking your real ISP and not silently dropping back to your local connection.',
+        'Checking the ASN of a target IP before allow-listing or block-listing it in a firewall.',
+        'Identifying whether traffic claiming to be from "Iowa" is actually from a Hetzner data center.',
+        'Distinguishing residential users from datacenter scrapers for fraud-detection rules.',
+        'Tracing the route a customer\'s request takes when they report different behavior than expected.',
+      ],
+      examples: [
+        {
+          title: 'A Cloudflare IP',
+          input: '1.1.1.1',
+          output:
+            'Country: AU\nOrg: Cloudflare, Inc.\nASN: 13335\nReverse DNS: one.one.one.one\nFlags: hosting',
+          note: 'Cloudflare\'s public DNS resolver. The hosting flag and the AS number both signal "this is a cloud provider", not a home user.',
+        },
+        {
+          title: 'Your own IP',
+          input: '(empty input)',
+          output: 'Returns the IP your request arrived from, plus its geolocation.',
+          note: 'Same trick as ipchicken or "what is my IP". Handy when behind multiple proxies.',
+        },
       ],
       gotchas: [
-        'Free-tier geolocation is approximate — city is rarely better than ±50 km.',
-        'VPN/proxy detection lags reality. Newly-rotated VPN exits may not be flagged yet.',
+        'Free-tier geolocation is approximate — city accuracy is rarely better than ±50 km, and for ranges with no recent traffic it can be wildly wrong. Treat city as a hint, not an authoritative answer.',
+        'VPN/proxy detection lags reality. A newly-rotated VPN exit may not be flagged yet; a residential IP that briefly hosted a Tor exit may stay flagged for months after.',
+        'IPv6 lookups depend on the database having coverage for the /48 or /64 prefix. Coverage is patchier than IPv4 because allocations are more recent.',
+        'CG-NAT (carrier-grade NAT) and mobile networks share a single egress IP among many users. The location returned is the egress, not the user — accurate for the ISP but not for the person.',
+        'A private IP (10.x, 172.16–31.x, 192.168.x, 169.254.x) cannot be geolocated because the database has nothing to look up. The tool will say "private" and stop there.',
+        'IPs migrate between regions when allocations change hands. A lookup result from a year ago can be outdated even for a static IP.',
+      ],
+      faq: [
+        {
+          q: 'How accurate is the geolocation?',
+          a: 'Country-level: usually correct. City-level: roughly correct within tens of kilometers for residential ISPs in well-mapped countries, much less accurate for mobile and CG-NAT IPs. Coordinates should be treated as the centroid of a probable region, not a real address.',
+        },
+        {
+          q: 'What is an ASN?',
+          a: 'An Autonomous System Number is the identifier for a network operator at the BGP level. AS13335 is Cloudflare, AS32934 is Facebook, AS15169 is Google. Two IPs in the same ASN are operated by the same organization.',
+        },
+        {
+          q: 'Why does the tool say "hosting" for my home IP?',
+          a: 'Either you are behind a VPN that resolves to a datacenter, or your ISP\'s allocation got reclassified. If the ASN says "Comcast" or "BT" and the flag says "hosting", that is a database error — file feedback.',
+        },
+        {
+          q: 'Can I look up someone\'s IP if I have only a username?',
+          a: 'No. This tool resolves IPs you already have. It does not de-anonymize accounts or perform OSINT on usernames.',
+        },
+        {
+          q: 'Is my own IP recorded?',
+          a: 'The serverless function logs the queried IP for rate limiting and abuse prevention, with a short retention window. No personal data is collected beyond what the request itself carries.',
+        },
       ],
     },
   },
@@ -1654,15 +2005,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Queries the public RDAP system (rdap.org) for any registered domain. RDAP is the modern, JSON-based replacement for legacy WHOIS — same data, structured output, no rate-limiting weirdness.',
+        'Queries the modern RDAP system (rdap.org) for any registered domain and surfaces the fields you actually care about: registrar, registration date, last updated, expiry, EPP status flags and nameservers. RDAP is the structured JSON replacement for legacy WHOIS — same registry data, but parseable rather than hand-formatted text. The expiry date is color-coded so a soon-to-expire domain is immediately obvious.',
+      howItWorks: [
+        'RDAP (Registration Data Access Protocol, RFC 7480–7484) is the IETF-blessed successor to WHOIS. Where WHOIS spoke over port 43 and returned freeform text that varied wildly between registries, RDAP speaks HTTPS and returns standardized JSON.',
+        'When you submit a domain, the tool forwards the lookup through rdap.org, which routes to the correct registry RDAP server based on the TLD. The response is normalized into the registration metadata, status flags and nameservers.',
+        'The "expires in" badge compares the registry expiration date to the current server time. Renewing a domain only updates the registry record after the registrar pushes the renewal upstream, which can take a day — so the badge can lag your actual renewal by 24 hours.',
+      ],
       useCases: [
-        'Catching a domain that\'s about to expire so you can renew it.',
-        'Confirming who registered a suspicious lookalike domain.',
-        'Auditing the nameservers a domain currently points at.',
+        'Catching a domain that is about to expire so you can renew before it drops.',
+        'Confirming who registered a suspicious lookalike domain during a phishing investigation.',
+        'Auditing the nameservers a domain currently points at — useful when a DNS change is mysteriously not working.',
+        'Verifying that a domain transfer completed and the new registrar is in place.',
+        'Checking EPP status flags (clientTransferProhibited, serverHold) before initiating a transfer.',
+        'Spotting recently registered domains with privacy-redacted contacts (a common bot-traffic signal).',
+      ],
+      examples: [
+        {
+          title: 'A standard gTLD lookup',
+          input: 'example.com',
+          output:
+            'Registrar: ICANN\nRegistered: 1995-08-14\nExpires: 2026-08-13 (218 days)\nNameservers: a.iana-servers.net, b.iana-servers.net\nStatus: clientTransferProhibited, serverDeleteProhibited',
+          note: 'A long-lived domain. The clientTransferProhibited flag prevents a rogue transfer; serverDeleteProhibited is a registry-level lock.',
+        },
+        {
+          title: 'Days-from-expiry badge',
+          input: 'expiring-soon.example',
+          output: '23 days remaining (amber)',
+          note: 'Color thresholds: green >30 days, amber 8–30, red ≤7 or expired.',
+        },
       ],
       gotchas: [
-        'ccTLDs (e.g. .uk, .br, .jp) often return less data than gTLDs by design — privacy regulations vary.',
-        'Recently-transferred domains may show stale registrar info for up to 24 hours.',
+        'ccTLDs (e.g., .uk, .br, .jp, .de) often return less data than gTLDs by design — local privacy regulations vary, and many ccTLD registries return only a registrar and expiry.',
+        'Recently-transferred domains may show stale registrar info for up to 24 hours while the registry catches up.',
+        'Privacy services (WhoisGuard, Domains By Proxy) replace the registrant contact with a forwarder, so "registrant" looking like a privacy service tells you nothing about who actually owns the domain.',
+        'A domain that does not exist will return 404, not "available" — registries do not expose availability through RDAP. Use a registrar\'s availability API or a whois client for that.',
+        'GDPR has redacted most registrant personal data from gTLD responses since 2018. The registrar field is still there, but the contact email and name fields are usually masked.',
+        'Some new gTLDs (.app, .dev, .page) are operated by Google and return slightly different field names. The tool normalizes the common ones.',
+      ],
+      faq: [
+        {
+          q: 'What is the difference between WHOIS and RDAP?',
+          a: 'WHOIS is the original protocol — port 43, freeform text, registry-specific format. RDAP is the modern replacement — HTTPS, structured JSON, consistent fields. ICANN has been migrating gTLDs from WHOIS to RDAP since 2018.',
+        },
+        {
+          q: 'Why is the registrant field redacted?',
+          a: 'GDPR. Since 2018, ICANN has required gTLD registries to mask personal information in public WHOIS/RDAP responses. Some registrars allow domain owners to opt in to publishing their information.',
+        },
+        {
+          q: 'How do I find out if a domain is available to register?',
+          a: 'Not through this tool. RDAP returns "not found" for any domain not in the registry, but registrars are the only authoritative source for availability because some domains are reserved or premium-priced.',
+        },
+        {
+          q: 'What does serverHold mean?',
+          a: 'A registry-level status that suspends the domain from the DNS. Usually applied for legal disputes, abuse, or non-payment. A domain with serverHold will not resolve even if the nameservers look correct.',
+        },
+        {
+          q: 'How current is the data?',
+          a: 'RDAP queries hit the live registry, so the data is as current as the registry has — typically within minutes of any registrar update. The exception is transfer events, which propagate over hours.',
+        },
       ],
     },
   },
@@ -1836,15 +2236,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Wraps the open-source qrcode library to produce QR codes entirely in your browser. Adjustable error correction (L/M/Q/H), pixel size, and dual-color theming. Output is a real PNG/SVG, not an embedded screenshot.',
+        'Generates real, scannable QR codes for any URL or text directly in your browser via the open-source qrcode library. You pick the error correction level, the pixel size and the foreground/background colors, then export as a true PNG bitmap or an SVG vector — no upload, no watermark, no per-day limit.',
+      howItWorks: [
+        'A QR code encodes data as a 2D grid of black and white modules. The encoder picks the smallest grid size (version 1–40) that fits your input plus the chosen error-correction overhead, lays out the data with Reed-Solomon error-correction bytes interleaved, and applies a mask pattern that minimizes scanner-confusing artifacts.',
+        'Error correction (L 7%, M 15%, Q 25%, H 30%) means the scanner can recover the original data even when up to that fraction of the code is obscured or damaged. Higher correction lets you put a logo in the center; it also makes the code denser, so the printable size grows.',
+        'PNG export rasterizes the matrix at the requested pixel size. SVG export emits one rect per module — small file, infinite zoom — which is what you want for print.',
+      ],
       useCases: [
-        'Putting a sign-up URL on a printed flyer or conference badge.',
-        'Generating a Wi-Fi join QR for guests (use the WIFI: format).',
-        'Embedding a deeplink in an email or video frame.',
+        'Putting a sign-up URL on a printed flyer or conference badge where a long URL would be impractical to type.',
+        'Generating a Wi-Fi join QR for guests using the WIFI: format so scanning connects them directly.',
+        'Embedding a deeplink in an email signature, video overlay, or sticker.',
+        'Bridging a desktop session to a mobile device (open this URL on your phone).',
+        'Putting menu URLs on table tents in restaurants and pop-ups.',
+        'Generating vCards (BEGIN:VCARD) so a scan adds your contact info in one tap.',
+      ],
+      examples: [
+        {
+          title: 'A simple URL',
+          input: 'https://debugdaily.online',
+          output: 'A 25x25-module QR, version 2, error level M.',
+          note: 'Short URLs fit in small QR codes that scan reliably even when printed tiny.',
+        },
+        {
+          title: 'Wi-Fi join code',
+          input: 'WIFI:T:WPA;S:GuestNet;P:hunter2;H:false;;',
+          output: 'A QR that, when scanned, prompts to join GuestNet with password hunter2.',
+          note: 'The format is standardized — most modern phones recognize WIFI: and offer a one-tap join.',
+        },
       ],
       gotchas: [
-        'Higher error correction (Q/H) makes the code more resilient to damage but stores less data.',
-        'Black-on-white scans more reliably than custom colors. Stick to high-contrast pairs.',
+        'Higher error correction (Q/H) makes the code more resilient to damage but stores less data per version. A long URL at level H may need a larger version, which means a larger printed code.',
+        'Black-on-white scans more reliably than colored codes. Custom colors are fine for marketing but should keep a strong dark/light contrast — light foreground on dark background is non-standard and many scanners reject it.',
+        'A logo in the center is supported by using a high error correction level (Q or H) and covering up to ~25% of the area. Cover more and scans start failing.',
+        'Quiet zone matters. A QR code needs a white border at least 4 modules wide around it. Tools that crop the code tight will produce something that scanners struggle with.',
+        'Tracking links inside QRs create extra cost — each scan goes through the redirect service, and a scan failure rate of even 1% adds up at scale. For printed forever-codes, prefer a direct URL.',
+        'There is no expiry built into a QR. A QR printed today and discovered in 2032 will still try to load the URL — keep that in mind when deciding what to encode.',
+      ],
+      faq: [
+        {
+          q: 'Are these QR codes free to use commercially?',
+          a: 'Yes. QR Code is a public specification, royalty-free since 1994 when Denso Wave released the patent. The codes generated here have no trademark, watermark, or licensing restriction.',
+        },
+        {
+          q: 'How much data can a QR code hold?',
+          a: 'At maximum (version 40, error level L) about 2,953 bytes for binary data or 4,296 alphanumeric characters. Practical limits are much lower — version 10 at level M holds about 200 characters and is the sweet spot for URLs.',
+        },
+        {
+          q: 'Why does my Wi-Fi QR not work?',
+          a: 'Three common causes: wrong T: value (it should be WPA, WEP, or nopass), unescaped special characters in the password (semicolons and colons need a backslash), or hidden SSID without H:true. Test on the device you will hand it to.',
+        },
+        {
+          q: 'What is the right size to print?',
+          a: 'A QR code should be at least 2 cm (0.8 inches) on a side at typical reading distance (arm\'s length). For posters or signs read from 3 meters away, scale up proportionally — 10× viewing distance roughly equals 10× minimum size.',
+        },
+        {
+          q: 'Is my data sent anywhere?',
+          a: 'No. The QR is generated entirely in your browser. The input text never leaves the tab.',
+        },
       ],
     },
   },
@@ -1862,15 +2310,62 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Uses crypto.getRandomValues for true random output (not Math.random). Configurable range, count, duplicate behavior, and result ordering.',
+        'Generates cryptographically random integers in any range using crypto.getRandomValues — the same OS-backed CSPRNG used by TLS, ssh-keygen and password managers. Pick a range, a count, whether duplicates are allowed, and how the output should be sorted. Suitable for tokens, giveaways and any other purpose where Math.random would be dangerous.',
+      howItWorks: [
+        'crypto.getRandomValues fills a typed array with bytes from the OS cryptographic source: getrandom on Linux, BCryptGenRandom on Windows, SecRandomCopyBytes on macOS. The same source that the kernel uses for /dev/urandom.',
+        'To get a uniform integer in [min, max], the tool draws 32-bit unsigned values and rejects ones that would land in the "biased" final partial range — a technique called rejection sampling. The result is mathematically uniform; no value is more likely than any other.',
+        'For "without duplicates" mode (e.g., picking 6 unique numbers from 1–49), the tool draws until enough distinct values are found. Efficient up to a few thousand picks from a million-element range; for picking N from a much larger N it switches to a Fisher–Yates shuffle on the candidate space.',
+      ],
       useCases: [
-        'Picking a winner for a giveaway or lottery in front of an audience.',
+        'Picking a winner for a giveaway or lottery in front of an audience — the result is verifiable, no Math.random tricks.',
         'Generating a list of seed values for property-based testing.',
         'Producing a random sample of row IDs from a known range.',
+        'Simulating dice rolls or card draws for tabletop or game-balance work.',
+        'Generating PIN codes or short numeric tokens (note: prefer longer alphanumeric tokens for security-sensitive cases).',
+        'Bootstrapping a random ordering of items when you do not want a full deterministic seed.',
+      ],
+      examples: [
+        {
+          title: 'Six lottery numbers, 1–49, no duplicates',
+          input: 'Range 1–49, Count 6, no duplicates',
+          output: '3, 17, 22, 31, 38, 44',
+          note: 'Sorted ascending for readability. Each draw is independent — past results never influence future ones.',
+        },
+        {
+          title: 'A range with duplicates allowed',
+          input: 'Range 1–10, Count 20, duplicates allowed',
+          output: '7, 2, 9, 2, 5, 8, 1, 7, 3, 6, 10, 4, 7, 9, 2, 5, 8, 3, 1, 6',
+          note: 'With only 10 possible values and 20 picks, duplicates are mathematically required.',
+        },
       ],
       gotchas: [
-        '`Math.random` is NOT cryptographically secure — never use it for tokens, OTPs, or anything an attacker would care about.',
-        'Modulo bias is negligible for ranges much smaller than 2^32 (which this tool handles).',
+        'Math.random is NOT cryptographically secure — it is a fast deterministic PRNG seeded from the system clock. Predictable, and unsafe for tokens, OTPs, session keys, anything an attacker cares about. This tool never uses it.',
+        'For security-sensitive integers (PIN codes, OTP codes), 4 digits is brute-forceable in ten thousand tries. Use at least 6 digits for OTPs and pair with rate-limiting.',
+        'Modulo bias matters when computing `random % N` directly — the lower indexes get slightly higher probability when N does not divide the random space evenly. This tool uses rejection sampling so the output is genuinely uniform; do not assume libraries elsewhere do the same.',
+        'Drawing many "without duplicates" picks from a small range slows down toward the end. Picking 999,999 of 1,000,000 is essentially shuffling the whole range; pick the inverse (drop the 1 you do not want) for efficiency.',
+        'A negative range (max < min) is treated as an error. Some other generators silently swap them; this one is explicit so a typo does not produce surprising output.',
+      ],
+      faq: [
+        {
+          q: 'Is this actually random or pseudo-random?',
+          a: 'It is cryptographically random — derived from the OS entropy pool, which collects unpredictable inputs (interrupt timings, hardware noise) and feeds them through a cryptographic mixer. For practical purposes, indistinguishable from "true" random.',
+        },
+        {
+          q: 'Can I reproduce a previous draw?',
+          a: 'No — the OS CSPRNG does not accept a seed. If you need reproducible randomness for tests, use a seeded PRNG library (mulberry32, seedrandom). For audited giveaways, use a public-commitment scheme (commit hash beforehand, reveal seed after).',
+        },
+        {
+          q: 'Why does my random number look "not random enough"?',
+          a: 'Human intuition about randomness is wrong. Real random sequences contain clumps, repeats and "patterns" — that is the definition. Sequences that look random to humans (no repeats, well-spread) are actually less random because they have been filtered.',
+        },
+        {
+          q: 'How big can the range be?',
+          a: 'Up to ±2^53 (JavaScript\'s safe integer range). Beyond that, use a BigInt-based generator. Picking from any range smaller than that is uniform and fast.',
+        },
+        {
+          q: 'Is the result fair for a public draw?',
+          a: 'Yes, but transparency matters. For a contested draw, capture a screen recording of the input parameters and result, and publish them. Better still: use a verifiable randomness beacon (drand, NIST) so the output is auditable.',
+        },
       ],
     },
   },
@@ -2523,6 +3018,226 @@ export const tools: Tool[] = [
       gotchas: [
         'No arbitrary precision — JavaScript number limits apply (53-bit safe integer, ~15 significant decimals).',
         'Trig functions take radians, not degrees.',
+      ],
+    },
+  },
+  {
+    slug: 'mermaid',
+    name: 'Mermaid Diagram Renderer',
+    description: 'Render flowcharts, sequence, class, ER, state, gantt and pie diagrams from Mermaid text.',
+    category: 'generate',
+    keywords: ['mermaid', 'diagram', 'flowchart', 'sequence', 'er', 'gantt', 'uml'],
+    Component: lazy(() => import('../tools/mermaid')),
+    seo: {
+      title: 'Mermaid Diagram Renderer Online — Flowchart, Sequence, ER, Gantt',
+      description:
+        'Render Mermaid diagrams live in your browser. Flowcharts, sequence, class, state, ER, gantt and pie. Download as SVG or PNG. Source never leaves the tab.',
+    },
+    content: {
+      about:
+        'Mermaid is a tiny text-based diagram language that turns plain syntax like flowchart TD or sequenceDiagram into clean, professional SVG diagrams. This renderer compiles your Mermaid source in your browser the same way GitHub, GitLab and Notion do — so what you see here is what those platforms will show. Source and rendered SVG never leave the tab.',
+      howItWorks: [
+        'On every change, the tool loads the Mermaid library (lazily — only the first time you open this page), feeds your source through mermaid.parse to surface syntax errors, then calls mermaid.render to produce a self-contained SVG string.',
+        'The renderer uses securityLevel: "strict", which disables click handlers and inline scripts inside the rendered SVG — important because Mermaid does interpret some user-supplied attributes. You can paste in untrusted source without worrying about XSS.',
+        'Download as SVG copies the raw vector output, or PNG rasterizes the SVG to a 2x-density bitmap with a matching background — useful for slide decks or anywhere that doesn\'t accept SVG.',
+      ],
+      useCases: [
+        'Sketching a sequence diagram for an architectural review without opening Lucidchart.',
+        'Building a state machine for documentation before committing it to the codebase.',
+        'Converting a hand-drawn whiteboard flowchart into something pasteable into a GitHub README.',
+        'Producing an ER diagram from your schema spec for a design doc.',
+        'Drafting a release gantt chart in code so it survives in version control.',
+        'Generating a quick pie chart of issue categories from a triage session.',
+      ],
+      examples: [
+        {
+          title: 'A minimal flowchart',
+          input: 'flowchart TD\n  A[Start] --> B{OK?}\n  B -- Yes --> C[Done]\n  B -- No  --> D[Retry]',
+          output:
+            'SVG of a three-decision flowchart (Start → branch → Done / Retry).',
+          note: 'TD = top-down. LR = left-to-right. BT and RL also work.',
+        },
+        {
+          title: 'Sequence diagram',
+          input:
+            'sequenceDiagram\n  Browser->>API: POST /login\n  API->>DB: SELECT user\n  DB-->>API: row\n  API-->>Browser: 200 + JWT',
+          output: 'SVG of a four-message sequence diagram with three lifelines.',
+          note: '->> is a solid arrow (call). -->> is dashed (return).',
+        },
+      ],
+      gotchas: [
+        'Mermaid syntax errors are sometimes cryptic. If the preview fails, try removing the most recent line — most failures are caused by a missing dash, arrow, or pipe.',
+        'Large diagrams (hundreds of nodes) render slowly because each shape is laid out individually. Break big diagrams into multiple smaller ones.',
+        'Some diagram types accept identifiers with special characters only if they are quoted. If a flowchart node label contains a colon or parenthesis, wrap the label in quotes.',
+        'Mermaid version drift matters. Diagrams that work on GitHub may use newer syntax than this renderer if Mermaid has updated since the page was built. Refresh if you suspect a version issue.',
+        'PNG download uses canvas-based rasterization, which means custom web fonts may not embed identically. For pixel-perfect output, use SVG and embed the font separately.',
+      ],
+      faq: [
+        {
+          q: 'What diagram types are supported?',
+          a: 'Flowchart, sequenceDiagram, classDiagram, stateDiagram-v2, erDiagram, gantt, pie, mindmap, gitGraph, journey, requirementDiagram, timeline, c4Context — basically every type Mermaid supports. The sample chips at the top of the page give you a starting point for the common ones.',
+        },
+        {
+          q: 'Is my diagram source uploaded anywhere?',
+          a: 'No. The Mermaid library runs in your browser; both your source and the rendered SVG stay in this tab.',
+        },
+        {
+          q: 'Can I use this for documentation that lives in GitHub?',
+          a: 'Yes. The Mermaid version we render with is one of the recent stable releases, so anything that renders here should render in GitHub, GitLab and Notion. If you hit a version gap, simplify to a syntax that has been supported for a while.',
+        },
+        {
+          q: 'How do I change the theme?',
+          a: 'The renderer uses a dark theme to match the site. To export with a different theme, add a %%{init: {"theme": "default"}}%% directive at the top of your Mermaid source — Mermaid will honor it.',
+        },
+        {
+          q: 'Why does my diagram look slightly different from GitHub?',
+          a: 'GitHub pins a specific Mermaid version that may be older or newer than the one this tool bundles. Layout heuristics can differ between minor versions. The structure will be the same.',
+        },
+      ],
+    },
+  },
+  {
+    slug: 'pem-decoder',
+    name: 'X.509 Certificate Decoder',
+    description: 'Decode a PEM-encoded TLS certificate. Subject, issuer, validity, SAN, fingerprints.',
+    category: 'inspect',
+    keywords: ['x509', 'certificate', 'pem', 'tls', 'ssl', 'cert', 'fingerprint'],
+    Component: lazy(() => import('../tools/pem-decoder')),
+    seo: {
+      title: 'X.509 / PEM Certificate Decoder Online — Subject, Issuer, SAN, Expiry',
+      description:
+        'Paste a PEM-encoded TLS certificate and see subject, issuer, serial, validity, SAN, signature algorithm, public key, SHA-1 and SHA-256 fingerprints. All client-side.',
+    },
+    content: {
+      about:
+        'Pastes a PEM-encoded X.509 certificate (anything between -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----) and turns it into human-readable fields: subject, issuer, validity window, subject alternative names, key type and size, signature algorithm, serial number, and SHA-1/SHA-256 fingerprints. Decoding happens in your browser via the @peculiar/x509 library; the certificate never leaves the tab.',
+      howItWorks: [
+        'A PEM certificate is just a base64-encoded DER blob wrapped in BEGIN/END markers. The tool strips the markers, base64-decodes the body, and hands the raw ASN.1 bytes to a real X.509 parser that walks the structure.',
+        'The parser pulls out the standard fields defined by RFC 5280 — version, serial, signature algorithm, issuer DN, validity, subject DN, public key info — plus any extensions present (SAN is by far the most common).',
+        'Fingerprints are computed with WebCrypto by hashing the entire DER blob with SHA-1 and SHA-256. These are the same hex strings you would get from running `openssl x509 -fingerprint -sha256` on the file.',
+      ],
+      useCases: [
+        'Confirming which hostname a TLS certificate actually covers before deploying it.',
+        'Checking when a production certificate expires so you can rotate before downtime.',
+        'Comparing the SHA-256 fingerprint your server sends against the one your monitoring service expects (certificate pinning).',
+        'Verifying that a self-signed CA you generated has the right subject and validity window.',
+        'Reading the issuer field of a chain certificate during a TLS-debugging session.',
+        'Deciphering a customer-uploaded cert without opening a terminal.',
+      ],
+      examples: [
+        {
+          title: 'A typical Let\'s Encrypt cert',
+          input: '-----BEGIN CERTIFICATE-----\n(base64 of DER bytes)\n-----END CERTIFICATE-----',
+          output:
+            'Subject: CN=example.com\nIssuer: CN=R3, O=Let\'s Encrypt\nSerial: 03:81:7F:2A:…\nValid: 2026-01-15 → 2026-04-15 (62 days)\nSAN: example.com, www.example.com\nKey: RSA 2048\nFingerprint SHA-256: 9F:8E:…',
+          note: 'Subject is the cert\'s identity. SAN is the list of hostnames the cert is actually valid for.',
+        },
+      ],
+      gotchas: [
+        'PEM files often contain multiple certs concatenated (a chain). This tool decodes the first cert in the input. To inspect a chain, paste one cert at a time.',
+        'Decoding does not verify trust. A cert with a perfectly valid structure can still be untrusted because its issuer is unknown or its chain is broken.',
+        'Subject alternative names are the real source of truth for which hostnames a cert covers. The CN (Common Name) field is legacy and modern browsers ignore it.',
+        'Fingerprints in some documentation are uppercase with colons (`AB:CD`), others lowercase without (`abcd`). This tool emits uppercase + colons, matching openssl x509 -fingerprint.',
+        'A cert can be technically valid but rejected by your TLS stack for missing extensions (Extended Key Usage, Authority Key Identifier) or for using a deprecated signature (SHA-1 with RSA).',
+      ],
+      faq: [
+        {
+          q: 'What is the difference between PEM and DER?',
+          a: 'DER is the raw binary encoding (ASN.1 DER). PEM is the base64 of that binary, wrapped in -----BEGIN CERTIFICATE----- / -----END CERTIFICATE-----. Both encode the same data. This tool accepts PEM.',
+        },
+        {
+          q: 'Why does my certificate fail to decode?',
+          a: 'Usually one of three reasons: missing BEGIN/END markers, line breaks copied as literal \\n characters, or an actual key file (which starts with BEGIN PRIVATE KEY) pasted instead of a cert. Make sure the input starts with -----BEGIN CERTIFICATE-----.',
+        },
+        {
+          q: 'Is this tool a replacement for `openssl x509 -text`?',
+          a: 'For the common fields, yes — and it is friendlier to read. For exotic extensions or pathological cases, fall back to openssl. This tool focuses on the 90% case.',
+        },
+        {
+          q: 'Can I verify the chain of trust?',
+          a: 'Not in this tool. Chain validation requires comparing each cert\'s issuer to the next cert\'s subject and verifying signatures with the issuer\'s public key. Use the SSL Check tool against a live host to do that end-to-end.',
+        },
+        {
+          q: 'Does the cert get uploaded anywhere?',
+          a: 'No. Parsing and hashing happen in your browser. No network call is made.',
+        },
+      ],
+    },
+  },
+  {
+    slug: 'jwt-generate',
+    name: 'JWT Generator',
+    description: 'Generate signed JWTs (HS256/384/512) for testing and seeding.',
+    category: 'generate',
+    keywords: ['jwt', 'generate', 'sign', 'hs256', 'token', 'auth'],
+    Component: lazy(() => import('../tools/jwt-generate')),
+    seo: {
+      title: 'JWT Generator (HS256 / HS384 / HS512) — Sign JSON Web Tokens Online',
+      description:
+        'Generate a signed JSON Web Token in your browser. HS256, HS384 or HS512 with a shared secret. Add iat, exp, sub and any custom claims. WebCrypto-backed, nothing uploaded.',
+    },
+    content: {
+      about:
+        'Builds a real, signed JSON Web Token from a header and payload of your choice using HS256, HS384 or HS512. Signing happens in your browser through WebCrypto — neither the secret nor the payload is sent to any server. Useful for seeding test users, debugging an integration where you need a token with specific claims, or producing a fixture for an automated test.',
+      howItWorks: [
+        'A JWT is three base64url-encoded parts joined by dots: header.payload.signature. The header declares the algorithm and type ({"alg":"HS256","typ":"JWT"}). The payload is whatever JSON object you want to carry. The signature is HMAC(secret, header + "." + payload), encoded as base64url.',
+        'On every change, the tool serializes the header and payload to compact JSON, base64url-encodes each, joins them with a dot, and signs the result with crypto.subtle.sign using your secret as the HMAC key. The signature bytes are base64url-encoded and appended to produce the final token.',
+        'Helper buttons let you stamp the standard time-based claims (iat = now, exp = now + 1h / 24h / 7d / 30d) without hand-editing the JSON. The token always re-signs immediately when the payload, secret or algorithm changes.',
+      ],
+      useCases: [
+        'Seeding a test user with a known token so your integration tests do not need to log in.',
+        'Debugging an API that rejects "bad token" with no detail — generate a token with the exact claims you expect and compare.',
+        'Producing a fixture token with a specific exp for testing token-expiry handling.',
+        'Reproducing a customer issue with a token that carries unusual claims (extra scopes, missing aud).',
+        'Building a Bearer token for a curl command during development.',
+        'Teaching the structure of JWTs without using anyone\'s real signing secret.',
+      ],
+      examples: [
+        {
+          title: 'A minimal HS256 token',
+          input:
+            'Algorithm: HS256\nSecret: your-256-bit-secret\nPayload: {"sub":"1234567890","name":"Jane Doe","iat":1740000000}',
+          output:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNzQwMDAwMDAwfQ.4UbpYi5z1QVf2nQX_qoBkZjp4mWv2bMaNXcQSrIfm9o',
+          note: 'Three dot-separated segments. The signature is HMAC-SHA256 of the first two segments using the secret, base64url-encoded.',
+        },
+        {
+          title: 'Token with one-hour expiry',
+          input: 'Payload: {"sub":"user-42"}\nClick "exp = now + 1h"',
+          output:
+            'Payload becomes: {"sub":"user-42","iat":1740009600,"exp":1740013200}',
+          note: 'The exp claim is a Unix timestamp in seconds. Most libraries reject tokens whose exp is in the past.',
+        },
+      ],
+      gotchas: [
+        'Anyone who has the secret can mint valid tokens. Treat the secret like a password — never check it into git, never expose it client-side in production.',
+        'HS256 needs a strong secret. RFC 7518 recommends at least 256 bits (32 random bytes). "password123" is technically accepted but trivially brute-forced.',
+        'The exp claim is in seconds, not milliseconds. A 13-digit value will be interpreted as a far-future date or rejected by strict libraries.',
+        'iat, nbf and exp are checked by the verifier with the verifier\'s clock. A token generated with this tool will be rejected if your server\'s clock is far enough off.',
+        'This tool emits HS-family tokens only. For RS256 or ES256 you need an asymmetric key pair, which is more involved than a single secret string. Use jose or your language\'s native library for that.',
+        'A generated token still has to be accepted by your verifier — which means the alg, kid, aud, iss and any other claims your server checks must match. The tool only handles the signing math.',
+      ],
+      faq: [
+        {
+          q: 'Is my secret sent anywhere?',
+          a: 'No. The secret is imported into the browser\'s WebCrypto subsystem locally and used to sign the token in-tab. Nothing — not the secret, not the payload, not the resulting token — is uploaded.',
+        },
+        {
+          q: 'Why HS256 only?',
+          a: 'HS256, HS384 and HS512 are the symmetric (shared-secret) JWT algorithms. They need only a string of bytes as the key, which is easy to type into a form. RS256 and ES256 use asymmetric key pairs in PEM format, which is a much heavier UI. We may add RS/ES support later; for now use jose or jsonwebtoken for those.',
+        },
+        {
+          q: 'What is a good HS256 secret?',
+          a: 'At least 32 bytes of random data. The API Token Generator on this site emits a 256-bit base64url string in one click — paste that as the secret and you have an RFC-compliant key.',
+        },
+        {
+          q: 'How long should exp be?',
+          a: 'For access tokens, 15 minutes to 1 hour is typical. Refresh tokens live days or weeks. For test fixtures, an hour is plenty. There is no upper limit defined in the spec; long-lived tokens are a security risk because revocation is hard.',
+        },
+        {
+          q: 'Can I verify the token I just generated?',
+          a: 'Yes — paste it into the JWT Decoder. The decoder shows the header, payload and remaining time on exp. To verify the signature, use your server-side library with the same secret.',
+        },
       ],
     },
   },

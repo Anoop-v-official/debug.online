@@ -505,6 +505,24 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://debugdaily.online/tools/mermaid</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://debugdaily.online/tools/pem-decoder</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://debugdaily.online/tools/jwt-generate</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://debugdaily.online/blog/regex-catastrophic-backtracking</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>

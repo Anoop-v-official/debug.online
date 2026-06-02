@@ -5,15 +5,19 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   BookmarkPlus,
   Command,
   Flame,
+  Keyboard,
   Search,
+  ShieldCheck,
   Sparkles,
   Star,
+  Wifi,
+  Zap,
 } from 'lucide-react';
 import { useSeo } from '../lib/seo';
 import { toolBySlug } from '../lib/tools';
@@ -952,6 +956,45 @@ const TOOLS: MarketingTool[] = [
     isNew: true,
     existingSlug: 'math-evaluator',
   },
+  {
+    id: 'jwt-generate',
+    name: 'JWT Generator',
+    description: 'Generate signed JWTs in-browser. HS256/384/512, custom claims.',
+    category: 'backend',
+    icon: '🔏',
+    badge: '✨ New',
+    searchVolume: '380K/mo',
+    searchVolumeNum: 380_000,
+    tags: ['jwt', 'generate', 'sign', 'hs256', 'token'],
+    isNew: true,
+    existingSlug: 'jwt-generate',
+  },
+  {
+    id: 'mermaid',
+    name: 'Mermaid Diagram Renderer',
+    description: 'Render flowcharts, sequences, ER and gantt charts from text. SVG + PNG export.',
+    category: 'frontend',
+    icon: '◇',
+    badge: '✨ New',
+    searchVolume: '410K/mo',
+    searchVolumeNum: 410_000,
+    tags: ['mermaid', 'diagram', 'flowchart', 'sequence', 'er', 'gantt'],
+    isNew: true,
+    existingSlug: 'mermaid',
+  },
+  {
+    id: 'pem-decoder',
+    name: 'X.509 Certificate Decoder',
+    description: 'Paste a PEM cert; see subject, issuer, SAN, expiry, fingerprints.',
+    category: 'security',
+    icon: '🛡',
+    badge: '✨ New',
+    searchVolume: '160K/mo',
+    searchVolumeNum: 160_000,
+    tags: ['x509', 'pem', 'certificate', 'tls', 'ssl'],
+    isNew: true,
+    existingSlug: 'pem-decoder',
+  },
 ];
 
 const TYPING_LINES = [
@@ -1200,146 +1243,148 @@ export function Home({ onOpenPalette }: HomeProps) {
 
 /* ─────────────────────────────  ABOUT CONTENT  ───────────────────────────── */
 
+const FEATURES = [
+  {
+    icon: ShieldCheck,
+    title: 'Browser-first by default',
+    body:
+      'Encoders, formatters, hashers and decoders run entirely in your tab via WebCrypto, TextEncoder and JSON.parse. Your input never gets uploaded.',
+  },
+  {
+    icon: Zap,
+    title: 'Fast on every page',
+    body:
+      'Each tool is a lazy-loaded chunk, the shell is a few dozen KB gzipped, and every URL ships as prerendered HTML for near-instant first paint.',
+  },
+  {
+    icon: Keyboard,
+    title: 'Keyboard-driven',
+    body:
+      '⌘K opens a fuzzy command palette over every tool. Search supports arrow-key nav and Enter-to-open. Most workflows take three keystrokes.',
+  },
+  {
+    icon: Wifi,
+    title: 'Smart paste',
+    body:
+      'Drop a JWT, JSON blob, color, IP, URL or timestamp into the home search — we route you to the right tool with the value pre-filled. No upload, no LLM.',
+  },
+] as const;
+
+const FAQ = [
+  {
+    q: 'Is debugdaily really free?',
+    a: 'Yes. No login, no trial, no rate limit on browser-side tools. Tool pages show unobtrusive ads to cover hosting; homepage, palette and policy pages stay ad-free.',
+  },
+  {
+    q: 'Do you store anything I paste?',
+    a: 'No. Browser-first tools never transmit your input. Network tools (DNS, WHOIS, ping, SSL) send only what is required to make the request and do not log payloads.',
+  },
+  {
+    q: 'Can I share a result with a teammate?',
+    a: 'Most tools have a Share button that creates a short URL encapsulating the current input. Open the link anywhere to recreate the state.',
+  },
+  {
+    q: 'Does the site work offline?',
+    a: 'Browser-first tools keep working once the page has loaded. Network tools need connectivity. The whole site is prerendered, so first paint is near-instant on a warm connection.',
+  },
+] as const;
+
 function AboutContent() {
   return (
     <section
       aria-labelledby="about-heading"
-      className="border-t border-border pt-10 pb-16 max-w-3xl text-sm leading-relaxed space-y-8"
+      className="border-t border-border pt-12 pb-16 space-y-10"
     >
-      <div className="space-y-3">
+      <div className="max-w-3xl space-y-3">
+        <div className="text-2xs uppercase tracking-widest font-mono text-subtle">
+          Why developers use it
+        </div>
         <h2
           id="about-heading"
           className="font-display text-2xl sm:text-3xl font-semibold tracking-tight"
         >
-          A no-login developer toolbox, built for the browser
+          A no-login developer toolbox, built for the browser.
         </h2>
-        <p className="text-muted">
-          debugdaily.online is a free online toolkit aimed at the work most
-          developers, DevOps engineers, sysadmins and security folks do every
-          day: format a JSON blob, decode a JWT, eyeball a regex, generate a
-          bcrypt hash, check a DNS record, build a cron expression. Each tool
-          runs in the browser whenever possible, so the data you paste in does
-          not leave your machine, and each one loads as its own small lazy
-          chunk so the page stays fast even with seventy-plus tools on offer.
-        </p>
-        <p className="text-muted">
-          The project started from a simple frustration: every dev has a list
-          of bookmarks pointing at a dozen different single-purpose sites, each
-          one with its own login wall, its own popup, its own version of "free
-          for limited use". Rolling them into one keyboard-driven page with a
-          consistent design turned out to be more useful than expected.
+        <p className="text-muted text-sm sm:text-base leading-relaxed">
+          A free online toolkit for the work developers, DevOps engineers,
+          sysadmins and security folks do every day — format JSON, decode
+          JWTs, hash passwords, look up DNS records, build cron expressions.
+          Everything that can run in your browser, runs in your browser.
         </p>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="font-display text-lg font-semibold">
-          What is in the toolbox
-        </h3>
-        <p className="text-muted">
-          The current set covers the categories most engineers reach for: data
-          formatters and validators for JSON, YAML, XML, SQL and Markdown;
-          encoders and decoders for Base64, URL, HTML entities, ROT13 and the
-          Caesar cipher; cryptography helpers for SHA, HMAC, bcrypt, and TOTP;
-          identifier generators for UUID v4, ULID and prefixed API tokens; a
-          live regex tester; a JSONPath tester; converters for Unix
-          timestamps, time zones, color spaces, CSS units, number bases and
-          Roman numerals; and a full network section with DNS lookup, WHOIS,
-          ping, IP geolocation, blacklist checks, SSL inspection and an
-          HTTP-headers analyzer.
-        </p>
-        <p className="text-muted">
-          The DevOps side has Dockerfile linting, a docker-run-to-compose
-          converter, Nginx config generation, a CIDR/subnet calculator and a
-          .env diff. The frontend section has CSS gradient and shadow
-          generators, a contrast checker, an SVG optimizer, an image-to-Base64
-          converter, a meta-tag preview that mirrors Twitter, Facebook,
-          LinkedIn and Google card previews, and a responsive design tester
-          that shows ten device sizes at once.
-        </p>
-      </div>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="list">
+        {FEATURES.map((f) => {
+          const Icon = f.icon;
+          return (
+            <li
+              key={f.title}
+              className="card p-4 space-y-2 hover:border-border-strong transition-colors"
+            >
+              <span
+                aria-hidden
+                className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-accent/30 bg-accent/5 text-accent"
+              >
+                <Icon className="w-4 h-4" />
+              </span>
+              <h3 className="font-display text-base font-semibold text-text">
+                {f.title}
+              </h3>
+              <p className="text-xs text-muted leading-relaxed">{f.body}</p>
+            </li>
+          );
+        })}
+      </ul>
 
-      <div className="space-y-3">
-        <h3 className="font-display text-lg font-semibold">
-          Why browser-first matters
-        </h3>
-        <p className="text-muted">
-          A surprising number of free online utilities upload your input to
-          their server before showing you the result. That is fine for a public
-          URL, but if you paste a JWT access token, a bcrypt hash, an internal
-          API response or a customer record into one of them, you have just
-          handed it to a third party with no idea what their retention policy
-          is. The pure-text tools on debugdaily run in WebAssembly or native
-          browser APIs (TextEncoder, crypto.subtle, RegExp, JSON.parse) inside
-          your own tab, so the bytes never cross the network.
-        </p>
-        <p className="text-muted">
-          The exceptions are network tools — DNS lookup, WHOIS, ping, SSL check
-          — which by definition need to make a request from a server. Those run
-          as Vercel serverless functions, do not log payloads, and rate-limit
-          per IP.
-        </p>
-      </div>
+      <div className="grid gap-8 lg:grid-cols-[1fr_1fr] max-w-5xl">
+        <div className="space-y-3">
+          <h3 className="font-display text-lg font-semibold">
+            What is in the toolbox
+          </h3>
+          <p className="text-sm text-muted leading-relaxed">
+            The current set covers formatters and validators for JSON, YAML,
+            XML, SQL and Markdown; encoders and decoders for Base64, URL and
+            HTML entities; cryptography helpers for SHA, HMAC, bcrypt and TOTP;
+            identifier generators for UUID, ULID and prefixed API tokens; a
+            live regex tester; converters for Unix timestamps, time zones,
+            color spaces and CSS units; and a full network section — DNS,
+            WHOIS, ping, IP geolocation, blacklist checks, SSL inspection,
+            HTTP-headers analyzer.
+          </p>
+          <p className="text-sm text-muted leading-relaxed">
+            The DevOps side covers Dockerfile linting, docker-run to compose
+            conversion, Nginx generation, CIDR math, .env diffs. The frontend
+            side has gradient and shadow generators, contrast checking, SVG
+            optimization, image-to-Base64, meta-tag previews and a
+            ten-device responsive tester.
+          </p>
+          <p className="text-sm">
+            <Link
+              to="/about"
+              className="text-accent hover:underline inline-flex items-center gap-1"
+            >
+              Read the full About page
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+            </Link>
+          </p>
+        </div>
 
-      <div className="space-y-3">
-        <h3 className="font-display text-lg font-semibold">
-          Frequently asked questions
-        </h3>
-        <dl className="space-y-4">
-          <div className="space-y-1">
-            <dt className="text-text font-medium">
-              Is debugdaily really free?
-            </dt>
-            <dd className="text-muted">
-              Yes. No login, no trial, no rate limit on the browser-side tools.
-              Tool pages display unobtrusive ads to cover hosting and API
-              costs; the homepage, command palette and policy pages stay
-              ad-free.
-            </dd>
-          </div>
-          <div className="space-y-1">
-            <dt className="text-text font-medium">
-              Do you store anything I paste?
-            </dt>
-            <dd className="text-muted">
-              No. Browser-first tools do not transmit your input at all.
-              Network tools transmit only what is required (a hostname for DNS,
-              an IP for WHOIS) and do not log the payload.
-            </dd>
-          </div>
-          <div className="space-y-1">
-            <dt className="text-text font-medium">
-              Can I share a result with a colleague?
-            </dt>
-            <dd className="text-muted">
-              Most tools have a Share button that creates a short URL
-              encapsulating the current input. Open the link on any device to
-              recreate the state — useful for handing off a debugging
-              breadcrumb without screenshots.
-            </dd>
-          </div>
-          <div className="space-y-1">
-            <dt className="text-text font-medium">
-              Does the site work offline?
-            </dt>
-            <dd className="text-muted">
-              Browser-first tools work offline once the page has loaded.
-              Network tools obviously need connectivity. The whole site is
-              prerendered to static HTML and served from Vercel&apos;s edge, so
-              first paint is near-instant on a warm connection.
-            </dd>
-          </div>
-          <div className="space-y-1">
-            <dt className="text-text font-medium">
-              How do you decide which tools to add?
-            </dt>
-            <dd className="text-muted">
-              We pick by what real engineers search for, weighted toward
-              utilities where existing options are slow, ad-heavy or
-              login-gated. The ones with the highest search volume get added
-              first, and we keep a running list of community suggestions.
-            </dd>
-          </div>
-        </dl>
+        <div className="space-y-3">
+          <h3 className="font-display text-lg font-semibold">
+            Frequently asked
+          </h3>
+          <dl className="space-y-3">
+            {FAQ.map((f) => (
+              <div
+                key={f.q}
+                className="rounded-md border border-border bg-surface p-3 space-y-1"
+              >
+                <dt className="text-sm text-text font-medium">{f.q}</dt>
+                <dd className="text-xs text-muted leading-relaxed">{f.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </div>
     </section>
   );

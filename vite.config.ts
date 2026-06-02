@@ -28,16 +28,20 @@ export default defineConfig({
             if (id.includes('react-router')) return 'router';
             if (id.includes('zustand')) return 'store';
             if (id.includes('lucide-react')) return 'icons';
-            // Heavy tool-specific libs: let them split with the dynamic tool import.
+            // React core itself — small, used everywhere.
             if (
-              id.includes('bcryptjs') ||
-              id.includes('sql-formatter') ||
-              id.includes('js-yaml') ||
-              id.includes('qrcode')
+              id.includes('/react/') ||
+              id.includes('/react-dom/') ||
+              id.includes('/scheduler/') ||
+              id.includes('/react-router/')
             ) {
-              return undefined;
+              return 'vendor';
             }
-            return 'vendor';
+            // Everything else from node_modules — let Rollup chunk by dynamic
+            // import so heavy tool-only deps (mermaid + d3 + dagre + cytoscape,
+            // x509 + pkijs + asn1js, sql-formatter, bcryptjs, js-yaml, qrcode)
+            // only load on the page that uses them.
+            return undefined;
           }
           if (id.includes('/src/tools/')) {
             // each tool already lazy-loaded; let Rollup chunk per dynamic import

@@ -19,6 +19,40 @@ export default function Post() {
         <code>{`ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/`}</code>
       </pre>
 
+      <div className="my-6 rounded-lg border border-border bg-surface-2 p-4 sm:p-6">
+        <div className="flex justify-center">
+          <svg
+            viewBox="0 0 620 180"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Alphabet difference between standard Base64 and base64url"
+            className="w-full max-w-full h-auto"
+          >
+            <title>Base64 vs base64url alphabet</title>
+            <g fontFamily="ui-monospace, monospace" fontSize="13">
+              <rect x="10" y="20" width="290" height="140" rx="8" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+              <text x="25" y="45" fill="currentColor" fontWeight="bold">Standard Base64</text>
+              <text x="25" y="62" fill="currentColor" opacity="0.6" fontSize="11">RFC 4648 §4 — MIME, certs, headers</text>
+              <text x="25" y="100" fill="currentColor">A–Z &nbsp; a–z &nbsp; 0–9 &nbsp;</text>
+              <text x="220" y="100" fill="#fb923c" fontSize="22" fontWeight="bold">+</text>
+              <text x="248" y="100" fill="#fb923c" fontSize="22" fontWeight="bold">/</text>
+              <text x="25" y="135" fill="#fb923c" fontSize="11">↳ both reserved in URLs</text>
+
+              <rect x="320" y="20" width="290" height="140" rx="8" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+              <text x="335" y="45" fill="currentColor" fontWeight="bold">Base64url</text>
+              <text x="335" y="62" fill="currentColor" opacity="0.6" fontSize="11">RFC 4648 §5 — JWT, OAuth, JWK</text>
+              <text x="335" y="100" fill="currentColor">A–Z &nbsp; a–z &nbsp; 0–9 &nbsp;</text>
+              <text x="530" y="100" fill="#22d3ee" fontSize="22" fontWeight="bold">-</text>
+              <text x="558" y="100" fill="#22d3ee" fontSize="22" fontWeight="bold">_</text>
+              <text x="335" y="135" fill="#22d3ee" fontSize="11">↳ URL-safe, padding usually dropped</text>
+            </g>
+          </svg>
+        </div>
+        <div className="text-xs text-subtle mt-3 text-center font-mono">
+          The entire difference: two characters in positions 62 and 63 of the alphabet.
+        </div>
+      </div>
+
       <p>
         That trailing <code>+</code> and <code>/</code> are the source of every base64url bug in
         history. Both are reserved characters in URLs:

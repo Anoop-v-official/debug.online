@@ -48,6 +48,54 @@ export default function Post() {
         v2, v3 and v5 exist (v3 and v5 are namespaced hashes) but you almost never need them.
       </p>
 
+      <div className="my-6 rounded-lg border border-border bg-surface-2 p-4 sm:p-6">
+        <div className="flex justify-center">
+          <svg
+            viewBox="0 0 620 260"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Bit layout of UUIDv4 and UUIDv7 compared"
+            className="w-full max-w-full h-auto"
+          >
+            <title>UUIDv4 vs UUIDv7 layout</title>
+            <g fontFamily="ui-monospace, monospace" fontSize="11">
+              <text x="20" y="25" fill="currentColor" fontWeight="bold" fontSize="13">UUIDv4 — 128 bits, all random</text>
+              <rect x="20" y="40" width="580" height="50" fill="none" stroke="currentColor" strokeOpacity="0.4" rx="4" />
+              <rect x="20" y="40" width="220" height="50" fill="currentColor" fillOpacity="0.08" />
+              <text x="130" y="70" textAnchor="middle" fill="currentColor">48 random bits</text>
+              <rect x="240" y="40" width="22" height="50" fill="#fb923c" fillOpacity="0.35" stroke="#fb923c" strokeOpacity="0.6" />
+              <text x="251" y="68" textAnchor="middle" fill="currentColor" fontSize="9">ver</text>
+              <text x="251" y="80" textAnchor="middle" fill="currentColor" fontSize="9">4</text>
+              <rect x="262" y="40" width="50" height="50" fill="currentColor" fillOpacity="0.08" />
+              <text x="287" y="70" textAnchor="middle" fill="currentColor">12 r</text>
+              <rect x="312" y="40" width="22" height="50" fill="#a78bfa" fillOpacity="0.35" stroke="#a78bfa" strokeOpacity="0.6" />
+              <text x="323" y="68" textAnchor="middle" fill="currentColor" fontSize="9">var</text>
+              <rect x="334" y="40" width="266" height="50" fill="currentColor" fillOpacity="0.08" />
+              <text x="467" y="70" textAnchor="middle" fill="currentColor">62 random bits</text>
+              <text x="20" y="108" fill="currentColor" opacity="0.6" fontSize="11">Order: random. Sorts: meaninglessly.</text>
+
+              <text x="20" y="155" fill="currentColor" fontWeight="bold" fontSize="13">UUIDv7 — 128 bits, time-prefixed</text>
+              <rect x="20" y="170" width="580" height="50" fill="none" stroke="currentColor" strokeOpacity="0.4" rx="4" />
+              <rect x="20" y="170" width="220" height="50" fill="#22d3ee" fillOpacity="0.25" stroke="#22d3ee" strokeOpacity="0.5" />
+              <text x="130" y="200" textAnchor="middle" fill="currentColor">48-bit Unix ms timestamp</text>
+              <rect x="240" y="170" width="22" height="50" fill="#fb923c" fillOpacity="0.35" stroke="#fb923c" strokeOpacity="0.6" />
+              <text x="251" y="198" textAnchor="middle" fill="currentColor" fontSize="9">ver</text>
+              <text x="251" y="210" textAnchor="middle" fill="currentColor" fontSize="9">7</text>
+              <rect x="262" y="170" width="50" height="50" fill="currentColor" fillOpacity="0.08" />
+              <text x="287" y="200" textAnchor="middle" fill="currentColor">12 r</text>
+              <rect x="312" y="170" width="22" height="50" fill="#a78bfa" fillOpacity="0.35" stroke="#a78bfa" strokeOpacity="0.6" />
+              <text x="323" y="198" textAnchor="middle" fill="currentColor" fontSize="9">var</text>
+              <rect x="334" y="170" width="266" height="50" fill="currentColor" fillOpacity="0.08" />
+              <text x="467" y="200" textAnchor="middle" fill="currentColor">62 random bits</text>
+              <text x="20" y="238" fill="currentColor" opacity="0.6" fontSize="11">Order: time. Sorts: chronologically as a string.</text>
+            </g>
+          </svg>
+        </div>
+        <div className="text-xs text-subtle mt-3 text-center font-mono">
+          v7 reuses the same envelope as v4 — only the meaning of the first 48 bits changes.
+        </div>
+      </div>
+
       <h2>The case for v4</h2>
 
       <p>

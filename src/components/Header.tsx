@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, MoonStar, Search, X } from 'lucide-react';
+import { Menu, Search, X } from 'lucide-react';
 import { LiveUsers } from './LiveUsers';
 
 interface HeaderProps {
@@ -81,15 +81,6 @@ export function Header({ onOpenPalette }: HeaderProps) {
             className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border bg-surface text-muted hover:text-text"
           >
             <Search className="w-4 h-4" aria-hidden />
-          </button>
-
-          <button
-            type="button"
-            aria-label="Theme toggle (light mode coming soon)"
-            title="Light mode coming soon"
-            className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-border bg-surface text-muted hover:text-text"
-          >
-            <MoonStar className="w-4 h-4" aria-hidden />
           </button>
 
           <button
