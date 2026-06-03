@@ -1402,15 +1402,72 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Pure-bitmath calculator for IPv4 CIDR blocks. Tells you exactly which addresses live inside the block, the netmask in dotted-decimal, and the wildcard (inverse mask) used by some firewall rules.',
+        'A pure-bitmath calculator for IPv4 CIDR blocks. Type a notation like 10.0.0.0/16 and get the network address, broadcast address, dotted-decimal netmask, inverse (wildcard) mask, first and last usable host addresses, and total host count. Useful when designing VPC layouts, splitting a subnet for a new environment, or sanity-checking that the /29 your network team handed you actually fits the six servers you needed.',
+      howItWorks: [
+        'A CIDR (Classless Inter-Domain Routing) notation 10.0.0.0/16 means "the network where the first 16 bits are fixed and the last 16 bits are the host part". The "/16" is the prefix length.',
+        'The network address is the lowest IP in the block (all host bits zero). The broadcast is the highest (all host bits one). The number of host bits gives you the size: 2^host_bits total addresses, of which two (network + broadcast) are reserved for traditional IPv4 — usable hosts is total − 2.',
+        'The netmask is the prefix length expressed as a dotted-decimal: /24 = 255.255.255.0, /16 = 255.255.0.0, /8 = 255.0.0.0. The wildcard mask is its bitwise inverse (0.0.0.255 for /24), used by Cisco ACLs and OSPF.',
+      ],
       useCases: [
-        'Picking a non-overlapping VPC CIDR before you create the AWS subnets.',
-        'Sanity-checking a /29 you\'re about to assign to a router.',
-        'Translating between dotted netmask (255.255.255.0) and slash form (/24).',
+        'Picking a non-overlapping VPC CIDR before creating AWS or GCP subnets.',
+        'Sanity-checking a /29 you are about to assign to a router or hardware appliance.',
+        'Translating between dotted netmask (255.255.255.0) and slash form (/24) in either direction.',
+        'Splitting a large /16 into multiple /24 subnets for staging environments.',
+        'Confirming whether two CIDR blocks overlap before connecting two VPCs.',
+        'Working out the broadcast address so you can configure a static route correctly.',
+      ],
+      examples: [
+        {
+          title: 'A standard /24 network',
+          input: '192.168.1.0/24',
+          output:
+            'Network:    192.168.1.0\nBroadcast:  192.168.1.255\nNetmask:    255.255.255.0\nWildcard:   0.0.0.255\nFirst host: 192.168.1.1\nLast host:  192.168.1.254\nUsable hosts: 254',
+          note: '254 usable hosts — total 256 addresses minus network and broadcast.',
+        },
+        {
+          title: 'A point-to-point /30 link',
+          input: '10.0.0.4/30',
+          output:
+            'Network:    10.0.0.4\nBroadcast:  10.0.0.7\nFirst host: 10.0.0.5\nLast host:  10.0.0.6\nUsable hosts: 2',
+          note: 'Just two usable IPs — exactly what you need for a router-to-router serial link or VPN endpoint pair.',
+        },
+        {
+          title: 'A large AWS VPC',
+          input: '10.0.0.0/16',
+          output:
+            'Network: 10.0.0.0\nBroadcast: 10.0.255.255\nUsable hosts: 65,534\nRoom for: 256 × /24 subnets or 16 × /20 subnets',
+          note: 'A /16 is the default AWS VPC size. Split it into /24 subnets per AZ for breathing room.',
+        },
       ],
       gotchas: [
-        '/31 and /32 are special — there is no broadcast/network in the usual sense, so usable host count == total.',
-        'IPv6 calculations need a different tool — this is IPv4 only.',
+        '/31 and /32 are special. /32 is a single host address (no network or broadcast). /31 is a two-address point-to-point link (RFC 3021) where both addresses are usable. The calculator treats both correctly.',
+        'AWS VPC subnets reserve the first FOUR usable addresses, not just network + broadcast. A /28 gives you 11 usable IPs in AWS, not 14. Other clouds have similar but not identical conventions — check the docs.',
+        'IPv6 calculations need a different tool — this is IPv4 only. IPv6 prefix lengths go up to /128, and there are no broadcast addresses in IPv6.',
+        'A /20 in AWS produces 4,094 usable IPs (4096 − 2 − AWS\'s extra 4 — but AWS only takes the 4 from the start of each subnet, not the parent VPC). Sizing is per-subnet, not per-VPC.',
+        'Some firewall and OSPF configs use the wildcard mask (the inverse). For a /24, that is 0.0.0.255, not 255.255.255.0. Reading a Cisco config without remembering this is a common confusion.',
+        'Public IP allocations are sparse — your ISP might give you a /29 (6 usable), not a contiguous block of "8 IPs". The unusable two are the network and broadcast of that block.',
+      ],
+      faq: [
+        {
+          q: 'How many IPs are in a /24?',
+          a: '256 total, 254 usable (network + broadcast reserved). The convenient round number is why /24 is the most common subnet size for offices, home networks and small cloud subnets.',
+        },
+        {
+          q: 'What is the difference between a CIDR and a subnet?',
+          a: 'A CIDR is a way to write a subnet — a network address plus a prefix length. "Subnet" is the more general concept; CIDR is just the modern variable-length notation. /24 replaces the legacy "class C" — same size, different naming.',
+        },
+        {
+          q: 'How do I check if two CIDRs overlap?',
+          a: 'Compare their network addresses after masking with the shorter prefix. If 10.0.0.0/16 contains 10.0.1.0/24 — yes, masking 10.0.1.0 with /16 gives 10.0.0.0, so the /24 is inside the /16. The calculator can help by showing the boundaries.',
+        },
+        {
+          q: 'Is 0.0.0.0/0 a valid CIDR?',
+          a: 'Yes — it means "every IPv4 address". Used in routing tables as the default route, and in security group rules to mean "allow from anywhere". The mirror in IPv6 is ::/0.',
+        },
+        {
+          q: 'Can I use a /23 to get more usable hosts than a /24?',
+          a: 'Yes. A /23 covers 512 addresses (510 usable), twice as many as a /24. It also requires aligning on a multiple-of-512 boundary, so 10.0.0.0/23 is fine but 10.0.1.0/23 is invalid.',
+        },
       ],
     },
   },
@@ -1501,15 +1558,69 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Computes the WCAG 2.1 contrast ratio between two colors using the standard relative-luminance formula. Shows pass/fail for AA (4.5:1 body, 3:1 large) and AAA (7:1 body, 4.5:1 large).',
+        'Computes the WCAG 2.1 contrast ratio between any two colors using the official relative-luminance formula, then tells you exactly which conformance levels the combination passes for. AA requires 4.5:1 for normal text and 3:1 for large text; AAA requires 7:1 and 4.5:1. A live preview shows your foreground on the chosen background so you can verify visually before shipping. Critical for any design that wants to be legally and ethically accessible.',
+      howItWorks: [
+        'WCAG 2.1 defines contrast ratio as (L1 + 0.05) / (L2 + 0.05), where L1 is the relative luminance of the lighter color and L2 the darker. Luminance itself is a weighted sum: L = 0.2126·R + 0.7152·G + 0.0722·B, with each channel first run through a sRGB-to-linear transformation.',
+        'The ratio ranges from 1:1 (identical colors, invisible) to 21:1 (black on white). The pass/fail thresholds are: 3:1 (AA large / AAA large), 4.5:1 (AA normal / AAA large), 7:1 (AAA normal).',
+        'On every input change, the tool parses both colors (hex, rgb, hsl all accepted), converts each to a linear-RGB luminance, computes the ratio, and renders the four pass/fail badges side by side along with a live text preview.',
+      ],
       useCases: [
-        'Verifying a brand color combo meets accessibility guidelines before shipping a redesign.',
-        'Auditing a button\'s focus state contrast.',
-        'Picking which of several "muted" text colors meets AA against your background.',
+        'Verifying a brand color combination meets accessibility guidelines before shipping a redesign.',
+        'Auditing a button\'s focus state contrast — focus indicators have their own 3:1 minimum.',
+        'Picking which of several muted text colors meets AA against your chosen background.',
+        'Comparing dark-mode and light-mode contrast for the same content.',
+        'Documenting an accessibility audit with screenshots of the ratio for each color pair used.',
+        'Confirming a legacy site\'s gray-on-gray text actually fails before lobbying to fix it.',
+      ],
+      examples: [
+        {
+          title: 'Black on white',
+          input: 'Foreground: #000000\nBackground: #ffffff',
+          output: 'Ratio: 21:1\nAA normal: ✓ AA large: ✓ AAA normal: ✓ AAA large: ✓',
+          note: 'The maximum possible contrast. Useful as a sanity check that the tool is working.',
+        },
+        {
+          title: 'A common "fail" — gray on white',
+          input: 'Foreground: #999999\nBackground: #ffffff',
+          output: 'Ratio: 2.85:1\nAA normal: ✗ AA large: ✗ AAA normal: ✗ AAA large: ✗',
+          note: 'Body text in #999 on white fails every level. Designers reach for this color all the time; legal compliance and real users with low vision both push back.',
+        },
+        {
+          title: 'A passing dark-mode pair',
+          input: 'Foreground: #ededed\nBackground: #0a0a0f',
+          output: 'Ratio: 17.34:1\nAA: ✓ AAA: ✓',
+          note: 'The site\'s actual dark-mode body text. Comfortably above AAA.',
+        },
       ],
       gotchas: [
-        'WCAG 2.1 contrast doesn\'t account for font weight or anti-aliasing — designs that look low-contrast may technically pass, and vice versa.',
-        'For users with limited vision, AAA is the safer bar for body text.',
+        'WCAG 2.1 contrast does not account for font weight, anti-aliasing or the surrounding context. Designs that look low-contrast may technically pass; designs that look fine may technically fail. The new APCA algorithm (a draft for WCAG 3) addresses some of these gaps.',
+        'For users with limited vision, AAA is the safer bar for body text. AA is the legal minimum; AAA is the design-for-everyone minimum.',
+        '"Large text" in WCAG terms means 18pt regular or 14pt bold (about 24px / 18.66px on a typical 96-DPI screen). Below that, the stricter normal-text thresholds apply.',
+        'Focus indicators, button borders and icon shapes have their own 3:1 minimum against adjacent colors. Pass body text and forget the focus ring is the most common contrast bug.',
+        'Alpha (transparency) makes contrast undefined — the effective foreground depends on what is behind it. Convert semi-transparent colors to their solid equivalent against the actual background before measuring.',
+        'WCAG ratios apply to the rendered pixel color, not the CSS value. CSS filters, opacity, blend modes all change what the user sees and what the contrast actually is.',
+      ],
+      faq: [
+        {
+          q: 'What is AA vs AAA?',
+          a: 'WCAG defines three conformance levels: A (basic), AA (the legal minimum in most jurisdictions, the de facto industry baseline), and AAA (the strictest, often impractical for entire sites but useful for critical content). For contrast: AA wants 4.5:1 normal / 3:1 large; AAA wants 7:1 normal / 4.5:1 large.',
+        },
+        {
+          q: 'My country requires accessibility — which standard applies?',
+          a: 'Most jurisdictions (US ADA-related Section 508, EU EN 301 549, UK Equality Act) defer to WCAG 2.1 AA as the technical standard. AAA is rarely required by law but is the safer choice for products that aim for inclusive design.',
+        },
+        {
+          q: 'What is APCA and should I use it instead?',
+          a: 'APCA (Accessible Perceptual Contrast Algorithm) is a perception-based contrast metric proposed for WCAG 3. It accounts for font weight and size in ways WCAG 2 does not. It is not yet a normative standard, so most compliance audits still use WCAG 2.1.',
+        },
+        {
+          q: 'Does this work for color combinations with transparency?',
+          a: 'Not directly. Contrast requires a solid foreground and background. Pre-composite any alpha against the actual page background first, then measure the resulting color.',
+        },
+        {
+          q: 'What is the contrast minimum for an icon?',
+          a: 'For "non-text" content (icons, UI components, focus indicators, chart elements), WCAG 2.1 requires 3:1 against adjacent colors. Text inside the icon still needs 4.5:1.',
+        },
       ],
     },
   },
@@ -1653,15 +1764,59 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Wraps the open-source sql-formatter library so you can format SQL across nine dialects without installing anything. Pick the dialect that matches your warehouse to keep dialect-specific keywords (e.g. PostgreSQL\'s WINDOW, BigQuery\'s STRUCT) intact.',
+        'Pretty-prints SQL across the dialects you actually use — MySQL, PostgreSQL, T-SQL (MSSQL), Snowflake, BigQuery, Redshift, SQLite, Oracle and plain SQL — by routing your query through the open-source sql-formatter library. The dialect you pick matters: each one has its own reserved words and quoting conventions, and choosing wrong can mis-tokenize a legal keyword like BigQuery\'s STRUCT into a column name. Output preserves your comments in place so the formatted version is safe to paste straight into a PR.',
+      howItWorks: [
+        'sql-formatter tokenizes the input using a dialect-specific lexer that knows which strings are keywords (SELECT, WITH), which are functions (COUNT, COALESCE), and which are operators or literals. Tokens are then placed onto new lines according to the formatter\'s rules: one clause per line, joined arguments lined up, parentheses expanded for readability.',
+        'Indentation and casing are configurable. Most teams pick 2-space indent with uppercase keywords because that is what historic style guides (Mozilla, Joe Celko\'s) used; some modern style guides prefer lowercase. The formatter never changes the meaning of your SQL — only the layout and the visible case of keywords.',
+        'Because the lexer is dialect-aware, a query that uses PostgreSQL-only features like WINDOW … AS … or JSON_BUILD_OBJECT keeps those tokens intact when you format under the PostgreSQL dialect, but might be reformatted weirdly under "standard SQL". When in doubt, match the warehouse.',
+      ],
       useCases: [
-        'Reading a one-line query pulled from a log into something a human can review.',
-        'Cleaning up a query before pasting it into a PR or doc.',
-        'Normalizing case in legacy SQL where someone wrote `SELECT` and `select` in the same file.',
+        'Reading a one-line query pulled from a log or APM trace into something a human can review.',
+        'Cleaning up a copied-from-an-ORM query that has zero whitespace before pasting into a PR.',
+        'Normalizing case in legacy SQL where someone wrote `SELECT` on one line and `select` on the next.',
+        'Producing a clean canonical form so a diff between two query versions actually shows the logical change, not whitespace noise.',
+        'Re-formatting a query before pasting into documentation so it does not span 400 columns.',
+        'Spotting an unmatched parenthesis or comma by letting the formatter re-indent the structure.',
+      ],
+      examples: [
+        {
+          title: 'Minified query to clean form',
+          input:
+            "SELECT u.id,u.email,count(o.id) FROM users u LEFT JOIN orders o ON o.user_id=u.id WHERE u.created_at>'2026-01-01' GROUP BY u.id,u.email ORDER BY count(o.id) DESC LIMIT 10",
+          output:
+            "SELECT\n  u.id,\n  u.email,\n  COUNT(o.id)\nFROM\n  users u\n  LEFT JOIN orders o ON o.user_id = u.id\nWHERE\n  u.created_at > '2026-01-01'\nGROUP BY\n  u.id,\n  u.email\nORDER BY\n  COUNT(o.id) DESC\nLIMIT\n  10",
+          note: 'Same query, readable. The JOIN and its ON clause are kept on the same row because the formatter treats them as a compound.',
+        },
       ],
       gotchas: [
-        'Dialect choice matters — the wrong one can mis-tokenize a keyword or quote.',
-        'Comments are preserved verbatim, including their position relative to surrounding tokens.',
+        'Dialect choice matters. T-SQL (MSSQL) treats square brackets [col] as identifier delimiters; PostgreSQL treats them as part of an array literal. Picking the wrong dialect can mis-tokenize a column name.',
+        'Comments are preserved verbatim, including their exact position relative to surrounding tokens. A trailing `-- comment` on the same line as a token stays attached to that token after formatting.',
+        'The formatter does not validate SQL semantics. A syntactically invalid query (missing FROM, mismatched parens) often still formats — only execution will catch the error.',
+        'Some dialects have multiple reserved-word lists across versions. A query using newer keywords (PostgreSQL 16\'s GROUPS frame, BigQuery\'s WINDOW INHERIT) may not be recognized if the bundled library version is older.',
+        'For very large queries (thousands of lines), formatting can take a noticeable fraction of a second. The library is fast but not infinitely so. Split the query if it becomes painful.',
+        'Stored procedures, T-SQL control flow (IF/WHILE/BEGIN..END) and PL/pgSQL bodies format unevenly — the library is designed for SELECT/INSERT/UPDATE/DELETE first.',
+      ],
+      faq: [
+        {
+          q: 'Which dialect should I pick?',
+          a: 'The one that matches your warehouse. PostgreSQL for Postgres/Citus/CockroachDB, MySQL for MySQL/MariaDB, T-SQL for SQL Server/Azure SQL, BigQuery for BigQuery, Snowflake for Snowflake. If you are not sure, "Standard SQL" is a safe-ish default but loses dialect-specific keyword recognition.',
+        },
+        {
+          q: 'Will the formatter change my query semantics?',
+          a: 'No. Formatting only affects whitespace, line breaks, indentation and the displayed case of keywords. The tokens themselves are unchanged. Run before and after through your test suite if you want belt-and-braces certainty.',
+        },
+        {
+          q: 'Why are my UPPERCASE table names becoming lowercase (or vice versa)?',
+          a: 'They are not — the formatter only changes the case of reserved keywords (SELECT, FROM) by default. Identifier case is whatever you typed. If the case looks different, you are probably looking at the keyword-case change, not an identifier change.',
+        },
+        {
+          q: 'Does this run in the browser or on a server?',
+          a: 'Entirely in your browser. sql-formatter is a JavaScript library; your query is never uploaded. Good for production queries you do not want to paste into a third-party site.',
+        },
+        {
+          q: 'Can I format a stored procedure or trigger?',
+          a: 'It will run, but the output may be uneven. The library is tuned for SELECT/DML; control-flow bodies (T-SQL BEGIN..END, PL/pgSQL DECLARE..BEGIN..END) format on a best-effort basis.',
+        },
       ],
     },
   },
@@ -1828,14 +1983,59 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Scans a pasted Dockerfile against a curated set of common anti-patterns from the Hadolint catalog. Each issue shows a line number, severity, and rule ID so you can look up the rationale.',
+        'Scans a pasted Dockerfile against a curated set of common anti-patterns drawn from the Hadolint catalog, plus a handful of Docker community best practices. Each issue surfaces a line number, severity (error, warning, info, style) and a stable rule ID so you can look up the rationale. Useful as a fast pre-PR check, a teaching tool, or a sanity pass on a Dockerfile copied from a tutorial of unknown vintage.',
+      howItWorks: [
+        'The linter tokenizes each line into an instruction (FROM, RUN, COPY, etc.) and its arguments. Multi-line RUN commands joined with `\\` are reassembled before analysis.',
+        'A set of rule functions inspects the parsed instructions. Some rules check single instructions (FROM with `:latest`, USER missing, COPY without ownership). Others check ordering or interactions (apt-get install without --no-install-recommends, multiple RUNs that should be chained).',
+        'Each finding is annotated with a stable rule ID like DL3007 (use specific tag, not `latest`) or DL3009 (delete apt cache after install). The IDs map to Hadolint\'s catalog, so you can search "DL3009" anywhere for the full rationale.',
+      ],
       useCases: [
         'Pre-checking a Dockerfile before opening a PR.',
-        'Teaching a teammate why their `RUN apt-get install` is broken.',
-        'Quick audit of a Dockerfile pulled from a tutorial.',
+        'Teaching a teammate why `RUN apt-get install -y curl` without a follow-up `rm -rf /var/lib/apt/lists/*` bloats the image.',
+        'Quick audit of a Dockerfile pulled from a tutorial that may be from 2018.',
+        'Confirming a base image upgrade did not silently introduce a regression.',
+        'Highlighting layers that would benefit from being combined or split.',
+        'Catching root-user issues before they get into production.',
+      ],
+      examples: [
+        {
+          title: 'A Dockerfile with several common issues',
+          input:
+            'FROM node:latest\nRUN apt-get update && apt-get install -y curl\nCOPY . /app\nWORKDIR /app\nRUN npm install\nCMD ["node", "server.js"]',
+          output:
+            'Line 1: DL3007 — Avoid using `latest` tag; pin to a specific version.\nLine 2: DL3008 — Pin apt package versions: `curl=...`.\nLine 2: DL3009 — Delete the apt cache after install (rm -rf /var/lib/apt/lists/*).\nLine 3: DL3000 — COPY/ADD should specify a USER before, or run as a non-root user.\nLine 5: DL3016 — Pin npm package versions in package.json instead of relying on default install.',
+          note: 'Five issues across five lines. Fixing them keeps the image smaller, more reproducible and safer.',
+        },
       ],
       gotchas: [
-        'This is a fast in-browser subset of Hadolint. For full coverage and CI gating, run Hadolint properly.',
+        'This is a fast in-browser subset of Hadolint. For full coverage, CI gating and the latest rules, run Hadolint properly (it has 50+ rules, this tool covers the most impactful ones).',
+        'Some "issues" are style-level — not bugs, but team-defined conventions. Suppress with care; the rule IDs make it easy to ignore in a config file.',
+        'Multi-stage Dockerfiles are analyzed per stage. Issues in an early stage that get discarded in the final image are still flagged because they affect build time and layer cache.',
+        'The linter cannot evaluate runtime behavior. A RUN that downloads from an unpinned URL will not trigger a warning even though the build is non-reproducible.',
+        'BuildKit-specific syntax (RUN --mount=...) is supported by the parser but not analyzed for BuildKit-specific patterns.',
+        'A passing lint is not a guarantee the image is secure or efficient. Scanning the built image with trivy or syft catches issues lint cannot see.',
+      ],
+      faq: [
+        {
+          q: 'What is Hadolint?',
+          a: 'The de facto Dockerfile linter — an open-source CLI written in Haskell that ships with ~70 rules. The catalog of rule IDs (DL3000–DL4000) is well-documented and stable. This tool implements a subset that fits in a browser.',
+        },
+        {
+          q: 'Why is using `latest` bad?',
+          a: 'Because `:latest` floats — what `latest` resolves to today is not what it will resolve to tomorrow. Builds become non-reproducible, and you can wake up to a broken image because the base bumped a major version. Always pin: `node:20.11.1-alpine`.',
+        },
+        {
+          q: 'Why combine RUN commands?',
+          a: 'Each RUN creates a layer. `RUN apt-get update` followed by `RUN apt-get install` produces a layer with stale apt cache and one with packages — the cache layer is permanently shipped. Combining with `&&` keeps the install layer self-contained.',
+        },
+        {
+          q: 'Should I always run as a non-root USER?',
+          a: 'Yes, in production. A container running as root inside the container can still escape to root on the host through certain misconfigurations. The container runtime makes it cheap to switch users — there is almost no reason not to.',
+        },
+        {
+          q: 'How is this different from `docker scan` or trivy?',
+          a: 'docker scan and trivy analyze the built image for known CVEs in installed packages. The linter analyzes the Dockerfile itself for structural and stylistic issues. Both are worth running; they catch different problems.',
+        },
       ],
     },
   },
@@ -1878,15 +2078,58 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Uses WebCrypto\'s `crypto.subtle.generateKey` to produce an RSA pair, then exports the private key as PKCS#8 PEM and the public key in the standard OpenSSH `ssh-rsa <base64> <comment>` form. Both are downloadable.',
+        'Generates a real RSA SSH key pair entirely in your browser using WebCrypto\'s crypto.subtle.generateKey. The private key is exported as PKCS#8 PEM (the format `ssh -i` accepts directly), and the public key in the standard OpenSSH single-line `ssh-rsa <base64> <comment>` form ready to paste into authorized_keys, GitHub deploy keys, or a cloud console. Both are downloadable. Crucially, the private key never crosses the network — it is generated in the OS\'s cryptographic random generator and stays in your tab.',
+      howItWorks: [
+        'crypto.subtle.generateKey produces an RSA key pair of the chosen size (2048, 3072 or 4096 bits) using the OS-level CSPRNG. The same source ssh-keygen on your machine would use.',
+        'The private key is exported in PKCS#8 (Public-Key Cryptography Standards #8) format — an ASN.1 binary structure base64-encoded between -----BEGIN PRIVATE KEY----- markers. OpenSSH accepts this format natively.',
+        'The public key is derived from the private key, converted to the OpenSSH wire format (a length-prefixed sequence of algorithm + exponent + modulus), and base64-encoded into the recognizable "ssh-rsa AAAAB3NzaC1yc2E…" line.',
+      ],
       useCases: [
-        'Bootstrapping a deploy key for a CI runner where you don\'t want to ssh-keygen from your machine.',
+        'Bootstrapping a deploy key for a CI runner where you do not want to expose your personal SSH key.',
         'Generating a one-off key for a short-lived test environment.',
-        'Replacing a compromised key without leaving the browser.',
+        'Replacing a compromised key fast, from any browser, without ssh-keygen installed.',
+        'Creating a key inside a kiosk or restricted environment where the terminal is unavailable.',
+        'Producing a fresh keypair for a customer integration where you need to send them a public key and keep the private side.',
+        'Teaching what an SSH key actually looks like — both halves visible side by side.',
+      ],
+      examples: [
+        {
+          title: 'A 4096-bit RSA pair',
+          input: 'Size: 4096, Comment: ci@deploy',
+          output:
+            '-----BEGIN PRIVATE KEY-----\nMIIJQgIBADANBgkqhkiG9w0BAQEF…\n-----END PRIVATE KEY-----\n\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAB…  ci@deploy',
+          note: 'The private key goes in ~/.ssh/id_rsa (mode 600). The public line goes in the remote authorized_keys or a deploy-key field.',
+        },
       ],
       gotchas: [
-        'Modern setups should prefer Ed25519 — but most browsers do not yet expose Ed25519 export. RSA-4096 remains widely accepted.',
-        'PKCS#8 PEM is what `ssh -i` accepts. If a tool insists on legacy OpenSSH format, run `ssh-keygen -p -m PEM -f keyfile`.',
+        'Modern setups should prefer Ed25519 — smaller, faster, easier-to-audit keys. Most browsers do not yet expose Ed25519 export via WebCrypto, so this tool offers RSA only. RSA-3072 or RSA-4096 remains universally accepted.',
+        'PKCS#8 PEM is what `ssh -i` accepts. If a tool specifically requires the legacy OpenSSH format (starts with -----BEGIN OPENSSH PRIVATE KEY-----), run `ssh-keygen -p -m OpenSSH -f keyfile` to convert.',
+        'After saving the private key, set the permissions to 600 (rw-------) or OpenSSH will refuse to load it with "Permissions are too open". The chmod calculator on this site shows the exact command.',
+        'A private key with no passphrase is sensitive — treat it like a password. If you generate one here and download it, store it in a password manager, an encrypted vault, or your SSH agent immediately.',
+        'GitHub, GitLab, Bitbucket and most cloud consoles paste the public-key line verbatim. Watch for accidental trailing whitespace or line breaks — they will silently break the install.',
+        'For machine-to-machine SSH (CI runners), prefer keys with no passphrase and tight permissions over passphrase-protected keys that need user interaction.',
+      ],
+      faq: [
+        {
+          q: 'Is the private key really only in my browser?',
+          a: 'Yes. WebCrypto generates the key in the browser process and only the JavaScript in this tab can access it. No network call is made, no localStorage save, no telemetry. Closing the tab loses the key.',
+        },
+        {
+          q: 'What size should I use?',
+          a: 'RSA-3072 or RSA-4096 for any new key in 2026. RSA-2048 is still widely accepted but feels small. If your stack supports it, prefer ed25519 — but that requires using ssh-keygen or another tool because WebCrypto does not expose ed25519 export yet.',
+        },
+        {
+          q: 'How do I use the key after downloading it?',
+          a: 'Save the private key as ~/.ssh/id_rsa (or any name you prefer), chmod 600, then either add it to ssh-agent (ssh-add path/to/key) or pass it with -i. Paste the public-key line into the remote authorized_keys.',
+        },
+        {
+          q: 'Should I add a passphrase?',
+          a: 'For human-used keys, yes — it protects the key if your laptop is lost. For machine keys (CI runners), no — they cannot type a passphrase. Use proper filesystem permissions and a dedicated key per machine instead.',
+        },
+        {
+          q: 'How is this different from ssh-keygen?',
+          a: 'ssh-keygen is the official OpenSSH tool with more features (key comments, format conversion, passphrase prompts). This tool produces equivalent RSA keys when you just need a clean pair without opening a terminal.',
+        },
       ],
     },
   },
@@ -2383,15 +2626,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Uses the browser\'s `Intl.DateTimeFormat` API for accurate conversion across IANA time zones. DST is handled automatically. Add as many zones as you want; the page persists nothing — refresh to reset.',
+        'Converts any moment between multiple time zones at once using the browser-native Intl.DateTimeFormat API, the same engine your Node and Deno code use. The browser bundles the full IANA time zone database — currently 600+ named zones — so historical DST transitions and political changes (Russia abolishing DST in 2014, Lord Howe Island\'s half-hour shift) are handled correctly without a separate library.',
+      howItWorks: [
+        'A single moment in time is, internally, a Unix millisecond timestamp — independent of any zone. When you enter a date and time and pick a "from" zone, the tool parses the input as a wall-clock time in that zone and converts it to UTC.',
+        'For each target zone, Intl.DateTimeFormat is invoked with a timeZone option and the UTC value is reformatted in that zone\'s local time. DST shifts, half-hour and 45-minute offsets (India, Nepal, Lord Howe), and historical changes are all handled by the browser\'s data.',
+        'Adding or removing a zone re-renders only the affected row. No state is persisted — refresh and the picker starts from your local zone again. The intent is for ad-hoc conversion, not for saved world clocks.',
+      ],
       useCases: [
-        'Picking a meeting time that works for teams across continents.',
-        'Verifying when a deploy window opens across regions.',
+        'Picking a meeting time that works for teams across continents without doing math in your head.',
+        'Verifying when a deploy window opens in each region you operate in.',
         'Translating a UTC timestamp from a log into something a non-engineer can act on.',
+        'Confirming when a customer in Sydney saw an outage relative to your UTC monitoring.',
+        'Scheduling an Asia/Pacific code review at a time when both sides are awake.',
+        'Resolving the "is this 9 AM or 9 PM their time?" ambiguity in async chat.',
+      ],
+      examples: [
+        {
+          title: 'NYC 10 AM → Tokyo / London / Sydney',
+          input: 'America/New_York 2026-06-03 10:00',
+          output:
+            'Asia/Tokyo:        2026-06-03 23:00\nEurope/London:     2026-06-03 15:00 (BST)\nAustralia/Sydney:  2026-06-04 00:00',
+          note: 'Tokyo does not observe DST; London and Sydney do. The tool handles the offset automatically.',
+        },
+        {
+          title: 'DST transition gotcha',
+          input: 'America/New_York 2026-03-08 02:30 (clocks spring forward at 2 AM)',
+          output: 'Ambiguous: 02:30 does not exist on this day.',
+          note: 'The 2:00–3:00 window is skipped during spring-forward. Conversions of times in that hour are ambiguous and the tool flags them rather than silently picking one.',
+        },
       ],
       gotchas: [
-        'IANA names are case-sensitive (`America/New_York`, not `america/new_york`).',
-        'Past dates use the historical DST rules at that point — usually correct, but confirm if you\'re investigating something pre-2000.',
+        'IANA names are case-sensitive: America/New_York (not america/new_york, and not America/New-York). Use the lookup if you are not sure of the exact spelling.',
+        'A moment like "2026-03-08 02:30" in America/New_York does not exist — that hour is skipped for DST. The tool flags ambiguous inputs rather than silently picking one of the two possible UTC values.',
+        'Past dates use the historical DST rules at that point — usually correct, but confirm if you are investigating something pre-2000 in a country that has changed its rules since.',
+        'Browsers update their tz database with new political changes (Egypt re-adopting DST, Lebanon\'s 2023 shift) at OS or browser update time. A very old device may have a slightly stale database.',
+        'Three-letter abbreviations (PST, EST, IST) are ambiguous — IST is both India and Israel — and the spec deprecates them. Always use the full IANA name in code and config.',
+        'UTC and GMT are nearly identical for any modern purpose but are not strictly the same. Use UTC for storage and timestamps; use GMT only when documents specifically call for it (UK rail schedules, some legal contexts).',
+      ],
+      faq: [
+        {
+          q: 'Why are IANA names like "America/New_York" instead of "EST"?',
+          a: 'IANA names identify a region whose UTC offset changes over time (because of DST and political decisions). "EST" is just an offset (UTC-5). New York is on EST in winter and EDT in summer; "America/New_York" captures both.',
+        },
+        {
+          q: 'Does the tool know about historical DST rules?',
+          a: 'Yes — the browser\'s IANA database includes historical rules going back to the 1970s for most zones, and back further for major ones. Converting a date from 1985 in Detroit will use the rules in force then, not today\'s.',
+        },
+        {
+          q: 'How do I find the right IANA name for my zone?',
+          a: 'Common ones: America/New_York, America/Chicago, America/Los_Angeles, Europe/London, Europe/Paris, Asia/Tokyo, Asia/Kolkata, Australia/Sydney, UTC. The full list is at iana.org/time-zones. The Intl API accepts any of them.',
+        },
+        {
+          q: 'Should I store timestamps in UTC or local time?',
+          a: 'UTC, almost always. A Unix timestamp or ISO 8601 with a Z suffix is unambiguous and easy to convert at display time. Storing local time without an explicit zone is the source of every recurring meeting bug ever shipped.',
+        },
+        {
+          q: 'How do I handle a recurring meeting across DST changes?',
+          a: 'Store the meeting in the organizer\'s wall-clock zone (e.g., "every Tuesday 09:00 America/New_York") and convert at display time. Recurring rules expressed in UTC will drift relative to local wall-clock when DST shifts.',
+        },
       ],
     },
   },
@@ -2409,15 +2701,65 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Skips the "remember the pipe-and-dash syntax" tax. Type into cells like a spreadsheet, choose alignment per column, and copy out the markdown. Optional CSV/TSV import for migrating existing tables.',
+        'Skips the "remember the pipe-and-dash syntax" tax of writing markdown tables by hand. Edit cells in a familiar spreadsheet-style grid, set per-column alignment, add or remove rows, and copy out clean GitHub-Flavored Markdown ready to paste into a README, PR description, or issue comment. Paste CSV or TSV in and it autodetects the delimiter; paste an existing markdown table back and you can keep editing.',
+      howItWorks: [
+        'A markdown table is just three pieces of text: a header row of pipe-separated values, an alignment row of dashes and optional colons (`|---|:---:|---:|` for left/center/right), and one body row per data row. The tool serializes the edited grid back into that exact structure.',
+        'Column widths in the source markdown are padded to the longest cell in each column so the raw text aligns even in a non-rendering editor. That is purely cosmetic — renderers ignore the padding.',
+        'CSV import uses a small parser that handles quoted fields and embedded commas. TSV is detected by counting tabs vs commas in the first line. Both round-trip cleanly to markdown.',
+      ],
       useCases: [
-        'Adding a comparison table to a README without doing the syntax in your head.',
-        'Converting a spreadsheet snippet into markdown for a PR description.',
-        'Drafting documentation tables in a clean visual editor.',
+        'Adding a comparison table to a README without doing the pipe-and-dash arithmetic in your head.',
+        'Converting a spreadsheet snippet into markdown for a PR description or release notes.',
+        'Drafting documentation tables in a clean visual editor instead of in raw markdown.',
+        'Migrating an internal wiki page from CSV-exported data to a markdown-based site (Docusaurus, Astro Starlight, Hugo).',
+        'Producing a table for a GitHub issue from a quick CSV dump.',
+        'Re-aligning the columns of a markdown table that got mangled by a copy-paste.',
+      ],
+      examples: [
+        {
+          title: 'A simple two-column comparison',
+          input: 'Two columns, three rows, left-aligned',
+          output:
+            '| Feature      | Status |\n| ------------ | ------ |\n| Auth         | ✓      |\n| Webhooks     | ✓      |\n| Multi-tenant | WIP    |',
+          note: 'GitHub, GitLab, Bitbucket, Notion, Obsidian and every static-site generator with markdown support all render this.',
+        },
+        {
+          title: 'Column alignment',
+          input: 'Three columns: left, center, right',
+          output:
+            '| Name  | Role     |  Score |\n| :---- | :------: | -----: |\n| Ada   | Engineer |    9.5 |\n| Grace | Designer |    9.2 |',
+          note: 'Colons on either side of the dashes set alignment per column. Numeric columns usually look best right-aligned.',
+        },
       ],
       gotchas: [
-        'Pipe characters inside cells need to be escaped as `\\|` when you paste the result somewhere.',
-        'Some markdown renderers ignore the `:---:` alignment row — confirm your target supports GFM.',
+        'Pipe characters inside cells need to be escaped as `\\|` or the cell will be split on them. The editor escapes them automatically; if you hand-edit the output, watch for unescaped pipes in URLs.',
+        'Some markdown renderers (Stack Overflow\'s older mode, RFC 7763 reference markdown) ignore the alignment row entirely. Confirm your target supports GitHub-Flavored Markdown — almost everything modern does.',
+        'Multi-line cell content (with `<br>` or literal newlines) is GFM-specific. Strict markdown collapses everything to single lines. If your target is strict, use bullets or numbered lists inside the cell.',
+        'Very wide tables (10+ columns) often look terrible on mobile rendering even when the markdown is correct. Consider splitting into multiple tables or using a definition list.',
+        'Tables with empty cells need an explicit empty pipe-separated slot (` |`), not literally nothing. The editor keeps the spacing; hand-edits sometimes drop the empty cell.',
+        'Code blocks inside cells are supported via inline code (backticks), but fenced code blocks (triple-backtick) inside a cell are NOT — they break the row structure.',
+      ],
+      faq: [
+        {
+          q: 'Is the table output GFM-compatible?',
+          a: 'Yes. The output uses standard GitHub-Flavored Markdown table syntax. It renders correctly on GitHub, GitLab, Bitbucket, Notion, Obsidian, Hugo, Astro, Docusaurus, and any other markdown engine that implements GFM tables.',
+        },
+        {
+          q: 'Can I edit a CSV file in the tool?',
+          a: 'Yes — paste CSV into the editor and it autodetects the delimiter, builds a grid you can edit, and re-emits markdown when you copy.',
+        },
+        {
+          q: 'How do I align numeric columns to the right?',
+          a: 'Click the alignment toggle on the column header. The tool inserts `---:` on the right side of the dashes for that column, which renders right-aligned in GFM.',
+        },
+        {
+          q: 'What is the maximum table size?',
+          a: 'No hard limit, but markdown tables become unwieldy past about 8 columns or a few dozen rows. Past that, consider an HTML table or a separate JSON file.',
+        },
+        {
+          q: 'Does the editor support cell formatting like bold and links?',
+          a: 'Yes — markdown inside cells renders in the preview and ships in the output. Use `[text](url)` for links, `**bold**` for emphasis, backticks for inline code.',
+        },
       ],
     },
   },
@@ -2539,14 +2881,72 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Click the checkboxes for read/write/execute across owner/group/other, or type the octal directly. The tool shows both the octal value and the human-readable symbolic form, plus the full chmod command.',
+        'Translates between every common way of expressing Unix file permissions: octal (755), symbolic (rwxr-xr-x), and the chmod command syntax (u+x,g+r,o-w). Toggle the read/write/execute checkboxes for owner, group and other, and watch all three forms update in real time. Useful when you have memorized "755" but forgotten exactly what it gives each principal, or when you need to translate "executable, group-readable, world-private" into a number.',
+      howItWorks: [
+        'Unix file modes are 9 permission bits arranged as three triples (owner, group, other), each with read (r=4), write (w=2) and execute (x=1) flags. Sum the bits within each triple and you get the familiar octal: rwx = 7, rw- = 6, r-x = 5, r-- = 4, --x = 1, --- = 0.',
+        'Three octal digits gives the standard 0–7 / 0–7 / 0–7 mode. A fourth leading digit, when present, encodes the special bits: setuid (4), setgid (2) and sticky (1). So 4755 is rwsr-xr-x — executable for owner with setuid, readable+executable for everyone.',
+        'The tool converts between forms by storing the mode as a 12-bit integer internally and rendering each view from that single source of truth. Editing any view updates the others.',
+      ],
       useCases: [
-        'Remembering why 755 is "executable for owner, readable for everyone else".',
-        'Setting up a deploy script that needs specific file modes.',
-        'Translating between rwxr-xr-x and 755 in either direction.',
+        'Remembering exactly why 755 is "executable for owner, readable+executable for everyone else".',
+        'Setting up a deploy script that needs specific file modes (executables 755, configs 600, log directories 750).',
+        'Translating between rwxr-xr-x and 755 in either direction without counting bits in your head.',
+        'Computing the right mode for an SSH private key (600) or an SSH directory (700) to satisfy strict-mode openssh.',
+        'Picking the umask that produces a desired default file/directory mode.',
+        'Reading the verbose output of `ls -l` faster by recognizing the mode at a glance.',
+      ],
+      examples: [
+        {
+          title: 'The canonical 755',
+          input: 'Checked: owner rwx, group rx, other rx',
+          output:
+            'Octal: 755\nSymbolic: rwxr-xr-x\nchmod 755 file.sh\nchmod u=rwx,go=rx file.sh',
+          note: 'Standard mode for executables and directories — owner does anything, everyone else can read and traverse.',
+        },
+        {
+          title: 'SSH private key (600)',
+          input: 'Checked: owner rw, group nothing, other nothing',
+          output:
+            'Octal: 600\nSymbolic: rw-------\nchmod 600 ~/.ssh/id_rsa',
+          note: 'OpenSSH refuses to use a private key with looser permissions. Set this exactly or ssh will print "Permissions are too open" and refuse.',
+        },
+        {
+          title: 'Setuid binary (4755)',
+          input: 'Octal: 4755',
+          output:
+            'Symbolic: rwsr-xr-x\nchmod 4755 binary',
+          note: 'The lowercase s indicates setuid + executable. Used by sudo, ping, passwd — programs that need to run with elevated privileges.',
+        },
       ],
       gotchas: [
-        'Setuid (4xxx), setgid (2xxx), and sticky bit (1xxx) aren\'t exposed in the UI — add them manually if needed (e.g. 4755).',
+        'The leading 0 in a four-digit octal (0755) is a C-language convention — in chmod itself, the number is always octal so the leading 0 is optional. With the leading 0 it is clearly octal in source code.',
+        'A file with execute permission but no read permission is uncommon and usually accidental — you cannot execute a script you cannot read. Compiled binaries can run with --x because the kernel needs only the execute bit.',
+        'Setuid scripts are ignored by Linux by design. The setuid bit on a #!/bin/sh file does nothing. Use a small C wrapper or a tool like sudo.',
+        'On directories, the execute bit means "may traverse" (cd into and look up entries by name). The read bit means "may list contents". A directory with x but no r can be cd-d into but ls will refuse.',
+        'The sticky bit on a directory (1, last digit) means "only the owner of a file in this dir may delete or rename it". This is what protects /tmp from one user deleting another user\'s files.',
+        'umask subtracts permissions from a default. A umask of 022 produces files at 644 (666-022) and directories at 755 (777-022). A umask of 077 produces 600 files and 700 directories — the standard for private home directories.',
+      ],
+      faq: [
+        {
+          q: 'Why is execute = 1 and not 3?',
+          a: 'The values 4/2/1 are chosen to be distinct bits so summing never causes a carry: rwx = 4+2+1 = 7, rw = 6, rx = 5, etc. No two permission combinations produce the same number.',
+        },
+        {
+          q: 'What does 777 mean and why is it bad?',
+          a: '777 grants read, write and execute to everyone. On any directory accessible to multiple users, that is a security hole — anyone can replace any file. Use 777 only for directories meant to be world-writable (uncommon outside of /tmp, which uses 1777 with the sticky bit).',
+        },
+        {
+          q: 'What is the difference between chmod 600 and chmod u=rw,go=?',
+          a: 'They produce the same result, expressed differently. 600 is absolute (sets the mode to exactly this). u=rw,go= is also absolute. u+rw,go-rwx would be relative — add rw to user, remove rwx from group and other from whatever the current mode is.',
+        },
+        {
+          q: 'When do I use 644 vs 755?',
+          a: '644 (rw-r--r--) for regular files that should be readable but not executable. 755 (rwxr-xr-x) for executables and directories. Setting a non-executable file to 755 is harmless; setting an executable to 644 makes it unrunnable.',
+        },
+        {
+          q: 'What is umask?',
+          a: 'A mask of permissions that newly created files and directories will NOT have. Umask 022 means new files default to 644 (since they start at 666 and 022 is subtracted) and directories to 755 (777 - 022). Set in your shell rc file.',
+        },
       ],
     },
   },
@@ -2684,15 +3084,66 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Uses WebCrypto\'s HMAC implementation. Outputs both hex (the standard for header signatures) and base64 (used by some providers).',
+        'Computes HMAC (keyed-Hash Message Authentication Code) signatures for any message and secret combination, using HMAC-SHA-1, SHA-256, SHA-384 or SHA-512. HMAC is what every modern webhook provider uses to prove a request came from them and was not tampered with — Stripe, GitHub, Slack, Shopify, Twilio, all use the same primitive with their own secret. The tool runs entirely in your browser through WebCrypto, so the secret never leaves the tab.',
+      howItWorks: [
+        'HMAC wraps a regular hash function with a secret in a specific construction: HMAC(K, m) = H((K ⊕ opad) || H((K ⊕ ipad) || m)). The two xor masks (ipad = 0x36, opad = 0x5C) prevent length-extension attacks that a naive H(K || m) would allow.',
+        'The output is the same size as the underlying hash — 32 bytes for HMAC-SHA-256, 64 bytes for HMAC-SHA-512. The tool shows both hex (the standard for `X-Signature` headers) and base64 (used by some providers like Slack).',
+        'WebCrypto handles the implementation natively: importKey on the secret, sign with the message, format the result. The same code your backend uses to verify is what runs in the browser, so signatures match byte-for-byte.',
+      ],
       useCases: [
         'Reproducing the signature a webhook provider sent you, to verify their docs match reality.',
-        'Generating a test signature for your own webhook implementation.',
-        'Debugging a "signature mismatch" error by comparing computed vs. received hex.',
+        'Generating a test signature for your own webhook implementation so your verifier can be tested without live traffic.',
+        'Debugging a "signature mismatch" error by computing the signature locally and comparing to what your server received.',
+        'Signing a short-lived URL with your secret so it cannot be tampered with by the recipient.',
+        'Generating a deterministic API request signature to use in a test harness or load generator.',
+        'Producing a fingerprint of a payload that any party with the secret can recompute, but no other party can forge.',
+      ],
+      examples: [
+        {
+          title: 'Stripe-style webhook signature',
+          input:
+            'Secret: whsec_test_secret\nMessage: 1740000000.{"id":"evt_123","type":"charge.succeeded"}\nAlgorithm: SHA-256',
+          output:
+            'Hex: 9f8e7d6c5b4a39281706f5e4d3c2b1a0…\nBase64: n45t1lJtT…',
+          note: 'Stripe prefixes the signed payload with the Unix timestamp and a dot — concatenated as shown. The verifier rebuilds the same string and compares signatures.',
+        },
+        {
+          title: 'GitHub-style webhook signature',
+          input:
+            'Secret: my-webhook-secret\nMessage: <raw request body bytes>\nAlgorithm: SHA-256',
+          output: 'sha256=8e1f2d4c…',
+          note: 'GitHub prepends sha256= to the hex digest in the X-Hub-Signature-256 header. Your code re-computes HMAC and compares the parts after the prefix.',
+        },
       ],
       gotchas: [
-        'HMAC is sensitive to the exact bytes of the secret and message. Whitespace, trailing newlines, and encoding all matter.',
-        'Many providers sign the raw request body, not a parsed/re-serialized version. Capture the original bytes when verifying.',
+        'HMAC is sensitive to the exact bytes of the secret and message. Whitespace, trailing newlines, and encoding all matter. A "valid" JSON payload that was re-serialized has different bytes than the original.',
+        'Many providers sign the raw request body, not a parsed/re-serialized version. If your web framework re-stringifies the body, your computed signature will not match. Capture the original bytes at the wire level.',
+        'The secret is sometimes a base64-encoded value, not the raw bytes. If your provider gave you a long string of mixed-case + digits + slashes, decode the base64 before passing it as the HMAC key.',
+        'HMAC verification on the server should use a constant-time comparison (crypto.timingSafeEqual in Node, hmac.compare_digest in Python). A naive == is timing-attack vulnerable.',
+        'HMAC-SHA-1 is still widely used (it remains secure for MAC purposes despite SHA-1 being broken for collision resistance), but most new providers use SHA-256 by default. Match what the documentation says exactly.',
+        'A signature only proves the message came from someone with the secret. It does not provide forward secrecy — if the secret leaks, every past signature is forgeable.',
+      ],
+      faq: [
+        {
+          q: 'What is HMAC and why not just SHA-256(secret + message)?',
+          a: 'Naive H(secret || message) is vulnerable to length-extension attacks: an attacker can append data and produce a valid hash without knowing the secret. HMAC uses two nested hashes with specific xor masks to prevent that. Always use HMAC, never raw hash with a prepended secret.',
+        },
+        {
+          q: 'Should I use SHA-1 or SHA-256?',
+          a: 'SHA-256 if you have the choice. HMAC-SHA-1 is still secure for MAC purposes — there is no practical attack — but SHA-1 is deprecated everywhere else and SHA-256 has no meaningful downside.',
+        },
+        {
+          q: 'How do I verify a webhook signature?',
+          a: 'Recompute HMAC(secret, raw_request_body) on your server with the same algorithm, then compare in constant time to the header value the provider sent. Reject anything that does not match. Treat the request as untrusted until verification passes.',
+        },
+        {
+          q: 'Why does my hex output not match the provider\'s?',
+          a: 'In rough order of frequency: wrong algorithm (SHA-256 vs SHA-1), wrong secret encoding (you used the displayed string instead of base64-decoding it), wrong message format (re-serialized JSON instead of raw bytes), wrong delimiter between fields (provider uses tab, you used newline).',
+        },
+        {
+          q: 'Is my secret sent to any server?',
+          a: 'No. WebCrypto runs HMAC entirely in your browser. The secret never leaves this tab.',
+        },
       ],
     },
   },
@@ -2710,15 +3161,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Full RFC 6238 TOTP implementation in WebCrypto. Pulls the current Unix time, advances the counter, and computes HMAC-SHA{1,256,512} on the secret. Shows the current code and the upcoming one with a countdown bar.',
+        'A full RFC 6238 Time-based One-Time Password generator running entirely in your browser via WebCrypto. Paste a base32 secret — the same string a service shows you when enabling 2FA — and the tool produces the 6-digit code that Google Authenticator, 1Password, Authy or Bitwarden would produce at the same moment. A countdown bar shows how many seconds until the next rotation, and the next code is previewed so you do not race the clock.',
+      howItWorks: [
+        'TOTP is HOTP (RFC 4226) with a time-derived counter. Every 30 seconds (by convention), the counter advances by 1: counter = floor(unix_seconds / period). The tool reads the browser\'s clock to derive the current counter.',
+        'The counter is encoded as an 8-byte big-endian integer and fed, along with the base32-decoded secret, into HMAC-SHA1 (or SHA-256 / SHA-512 if your provider chose those). The output is a 20-byte (or longer) MAC.',
+        'A "dynamic truncation" step picks the offset specified by the low 4 bits of the final byte, reads 4 bytes starting there, masks off the top bit, and reduces modulo 10^digits. That gives you the 6-digit code most people see.',
+      ],
       useCases: [
-        'Testing 2FA login flows during development without an authenticator app.',
-        'Verifying a secret a provider gave you actually generates the codes they expect.',
-        'Building a one-off CLI / CI tool that needs an OTP.',
+        'Testing 2FA login flows during development without setting up Google Authenticator on every test device.',
+        'Verifying a secret a provider gave you actually generates the codes they expect — useful when migrating from one authenticator app to another.',
+        'Building a one-off CI script that needs an OTP to log into a service that requires 2FA.',
+        'Recovering from an authenticator app you no longer have access to, when you saved the underlying secret.',
+        'Generating codes for accounts on devices that cannot run an authenticator app.',
+        'Debugging an integration where your service is rejecting otherwise-correct TOTP codes (often clock skew).',
+      ],
+      examples: [
+        {
+          title: 'A standard Google-Authenticator-style secret',
+          input: 'JBSWY3DPEHPK3PXP (SHA-1, 6 digits, 30s)',
+          output: 'Current code: 287082\nNext code: 614733\nResets in: 7s',
+          note: 'Defaults: SHA-1, 6 digits, 30-second period. Almost every service uses exactly these. The countdown shows how long until the code rotates.',
+        },
+        {
+          title: 'An 8-digit, 60-second variant',
+          input: 'JBSWY3DPEHPK3PXP (SHA-256, 8 digits, 60s)',
+          output: 'Current code: 12345678\nResets in: 41s',
+          note: 'Some enterprise providers (Microsoft Authenticator on certain configs) use longer codes and longer periods. The secret format is the same; only the algorithm and parameters change.',
+        },
       ],
       gotchas: [
-        'Secret must be base32. Most providers show it explicitly; some embed it in an otpauth:// QR.',
-        'The default for Google Authenticator, 1Password, Authy, Bitwarden is SHA-1 + 6 digits + 30s. Don\'t change these unless your provider requires it.',
+        'The secret must be base32 (RFC 4648), uppercase letters A–Z and digits 2–7. Some providers add spaces every 4 characters for readability — strip them. Lowercase usually works because tools normalize.',
+        'Default for Google Authenticator, 1Password, Authy, Bitwarden, Microsoft Authenticator is SHA-1 + 6 digits + 30s. Do not change these unless your provider explicitly says otherwise — a mismatch produces "wrong code" errors with no diagnostic.',
+        'Server-side TOTP verification typically accepts the previous, current and next code (a "window" of ±1) to tolerate clock skew. If your tool shows the right code but the server rejects it, your clock might be more than 30 seconds off from the server\'s.',
+        'TOTP secrets in an `otpauth://` URI also encode the algorithm, digits and period as query parameters. The QR codes you scan during 2FA setup embed those — if you only copy the secret, you lose the non-default parameters.',
+        'The 6 digits in a TOTP code do NOT carry 20 bits of entropy. They are a truncation of a longer MAC, so the security comes from the secret\'s length and the short validity window, not from the code itself.',
+        'TOTP relies on shared time. If your client and server clocks drift by more than your tolerance window, every code will look wrong. NTP is your friend.',
+      ],
+      faq: [
+        {
+          q: 'What is the difference between TOTP and HOTP?',
+          a: 'HOTP (RFC 4226) increments a counter on each use. TOTP (RFC 6238) is HOTP with a time-derived counter — every 30 seconds, the counter advances by 1. TOTP is what authenticator apps generate; HOTP shows up in some hardware tokens.',
+        },
+        {
+          q: 'Is my secret sent anywhere?',
+          a: 'No. WebCrypto runs HMAC entirely in your browser. The secret never leaves the tab. Same as your authenticator app, just in a webpage.',
+        },
+        {
+          q: 'Why does my provider show "wrong code"?',
+          a: 'In order of frequency: clock drift between your device and the server, wrong digit count (most are 6 but some use 8), wrong period (most are 30s but some use 60s), wrong algorithm (most are SHA-1 — almost no one uses SHA-256 even though it is "better"). Check the otpauth:// URI for the actual parameters.',
+        },
+        {
+          q: 'Can I use TOTP without a phone?',
+          a: 'Yes. TOTP only needs a place to store the secret and compute the HMAC. Browser-based generators, password manager integrations (1Password, Bitwarden), hardware keys (YubiKey OATH) and CLI tools (oathtool) all work.',
+        },
+        {
+          q: 'Is TOTP secure?',
+          a: 'TOTP is significantly better than passwords alone, but it is phishable — a fake login page can ask for your code and replay it within 30 seconds. WebAuthn / passkeys are phishing-resistant and are the modern recommendation for high-value accounts. TOTP remains a strong second factor for everything else.',
+        },
       ],
     },
   },
