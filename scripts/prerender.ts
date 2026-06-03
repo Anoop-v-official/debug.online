@@ -133,6 +133,12 @@ const STATIC_PAGES: RouteMeta[] = [
     description:
       'Practical engineering writing on DNS, JWT, password hashing, regex, and the rest of the daily debugging surface.',
   },
+  {
+    path: '/stats',
+    title: 'Most-used Tools — debugdaily Stats',
+    description:
+      'Live ranking of the most-used tools on debugdaily.online. Updated continuously from real session traffic, no cookies.',
+  },
 ];
 routes.push(...STATIC_PAGES);
 

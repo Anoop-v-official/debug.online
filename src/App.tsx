@@ -9,6 +9,7 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Blog } from './pages/Blog';
 import { BlogPost } from './pages/BlogPost';
+import { Stats } from './pages/Stats';
 import { CommandPalette } from './components/CommandPalette';
 import { CookieBanner } from './components/CookieBanner';
 import { InstallBanner } from './components/InstallBanner';
@@ -17,6 +18,7 @@ import { useHistoryStore } from './store/history';
 import { tools } from './lib/tools';
 import { isTauri } from './lib/runtime';
 import { sniffClipboard } from './lib/clipboardSniff';
+import { trackToolOpen } from './lib/track';
 
 const ToolPage = lazy(() =>
   import('./pages/ToolPage').then((m) => ({ default: m.ToolPage })),
@@ -25,7 +27,11 @@ const ToolPage = lazy(() =>
 export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const navigate = useNavigate();
-  const recordVisit = useHistoryStore((s) => s.record);
+  const recordVisitLocal = useHistoryStore((s) => s.record);
+  const recordVisit = (slug: string) => {
+    recordVisitLocal(slug);
+    if (!isTauri) trackToolOpen(slug);
+  };
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -101,6 +107,7 @@ export function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/stats" element={<Stats />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

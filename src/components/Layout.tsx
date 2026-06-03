@@ -36,6 +36,9 @@ export function Layout({
             <Link to="/blog" className="hover:text-text">
               Blog
             </Link>
+            <Link to="/stats" className="hover:text-text">
+              Stats
+            </Link>
             <Link to="/about" className="hover:text-text">
               About
             </Link>
