@@ -21,11 +21,16 @@ const KEY_SEARCH_MISS = 'stats:searchMiss';
 const KEY_REQUESTS = 'stats:requests';
 const REQUEST_MAX_LEN = 500;
 
+// Geo (country only — country code is not PII under GDPR)
+const KEY_COUNTRIES = 'stats:countries';
+const COUNTRY_RE = /^[A-Z]{2}$/;
+
 // In-process fallback for local dev / when KV isn't configured.
 const memOnline = new Map<string, number>();
 const memSeen = new Map<string, number>();
 let memTotal = 0;
 const memCounts = new Map<string, number>();
+const memCountries = new Map<string, number>();
 
 function pruneMem(now: number) {
   for (const [sid, last] of memOnline) if (now - last > STALE_MS) memOnline.delete(sid);
@@ -48,7 +53,7 @@ async function kvPipeline(
   return (await res.json()) as Array<{ result?: unknown; error?: string }>;
 }
 
-async function handlePresence(sid: string, res: VercelResponse) {
+async function handlePresence(sid: string, country: string | null, res: VercelResponse) {
   const now = Date.now();
   const cutoff = now - STALE_MS;
 
@@ -66,7 +71,11 @@ async function handlePresence(sid: string, res: VercelResponse) {
       const count = Number(r1?.[4]?.result ?? 0) || 0;
       let total = Number(r1?.[5]?.result ?? 0) || 0;
       if (isNewVisit) {
-        const r2 = await kvPipeline([['INCR', TOTAL_KEY]]);
+        const followups: Array<Array<string | number>> = [['INCR', TOTAL_KEY]];
+        // Count the country only on a new visit (each sid → one country bump
+        // per 24h dedupe window). Anonymous aggregate, no PII stored.
+        if (country) followups.push(['ZINCRBY', KEY_COUNTRIES, 1, country]);
+        const r2 = await kvPipeline(followups);
         total = Number(r2?.[0]?.result ?? total + 1) || total + 1;
       }
       res.status(200).json({ count, total });
@@ -81,9 +90,19 @@ async function handlePresence(sid: string, res: VercelResponse) {
   if (!memSeen.has(sid)) {
     memSeen.set(sid, now + VISIT_DEDUPE_S * 1000);
     memTotal += 1;
+    if (country) memCountries.set(country, (memCountries.get(country) ?? 0) + 1);
   }
   memOnline.set(sid, now);
   res.status(200).json({ count: memOnline.size, total: memTotal });
+}
+
+function readCountry(req: VercelRequest): string | null {
+  // Vercel attaches geo headers to every Edge/Serverless invocation.
+  const raw = req.headers['x-vercel-ip-country'];
+  const code = Array.isArray(raw) ? raw[0] : raw;
+  if (!code) return null;
+  const upper = String(code).toUpperCase();
+  return COUNTRY_RE.test(upper) ? upper : null;
 }
 
 async function handleTrackPost(slug: string, res: VercelResponse) {
@@ -195,7 +214,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.status(400).json({ error: 'invalid sid' });
         return;
       }
-      await handlePresence(sid, res);
+      await handlePresence(sid, readCountry(req), res);
       return;
     }
 
@@ -262,6 +281,8 @@ async function handleOverviewGet(res: VercelResponse) {
         ['GET', TOTAL_KEY],
         ['ZCARD', KEY_TOOLS],
         ['ZREVRANGE', KEY_TOOLS, 0, 0, 'WITHSCORES'],
+        ['ZREVRANGE', KEY_COUNTRIES, 0, 9, 'WITHSCORES'],
+        ['ZCARD', KEY_COUNTRIES],
       ]);
       const liveUsers = Number(out?.[1]?.result ?? 0) || 0;
       const totalVisits = Number(out?.[2]?.result ?? 0) || 0;
@@ -269,6 +290,17 @@ async function handleOverviewGet(res: VercelResponse) {
       const topRaw = (out?.[4]?.result ?? []) as unknown[];
       const topTool = topRaw.length >= 2 ? String(topRaw[0]) : null;
       const topToolCount = topRaw.length >= 2 ? Number(topRaw[1]) || 0 : 0;
+
+      const countriesRaw = (out?.[5]?.result ?? []) as unknown[];
+      const countries: Array<{ code: string; count: number }> = [];
+      for (let i = 0; i + 1 < countriesRaw.length; i += 2) {
+        countries.push({
+          code: String(countriesRaw[i]),
+          count: Number(countriesRaw[i + 1]) || 0,
+        });
+      }
+      const distinctCountries = Number(out?.[6]?.result ?? 0) || 0;
+
       res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=30');
       res.status(200).json({
         liveUsers,
@@ -276,6 +308,8 @@ async function handleOverviewGet(res: VercelResponse) {
         distinctTools,
         topTool,
         topToolCount,
+        countries,
+        distinctCountries,
       });
       return;
     } catch (e) {
@@ -293,11 +327,17 @@ async function handleOverviewGet(res: VercelResponse) {
       topToolCount = count;
     }
   }
+  const countries = [...memCountries.entries()]
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
   res.status(200).json({
     liveUsers: memOnline.size,
     totalVisits: memTotal,
     distinctTools: memCounts.size,
     topTool,
     topToolCount,
+    countries,
+    distinctCountries: memCountries.size,
   });
 }

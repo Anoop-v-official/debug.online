@@ -58,7 +58,9 @@ export function Header({ onOpenPalette }: HeaderProps) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <LiveUsers />
+          <span className="hidden sm:inline-flex">
+            <LiveUsers />
+          </span>
 
           <button
             type="button"
@@ -118,6 +120,12 @@ export function Header({ onOpenPalette }: HeaderProps) {
                 {n.label}
               </a>
             ))}
+            <div className="mt-2 pt-2 border-t border-border flex items-center justify-between px-3">
+              <Link to="/stats" className="text-sm text-muted hover:text-text">
+                Site stats
+              </Link>
+              <LiveUsers />
+            </div>
           </nav>
         </div>
       ) : null}

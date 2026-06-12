@@ -10,7 +10,7 @@ export function LiveUsers() {
       aria-live="polite"
       aria-label={`${count} ${count === 1 ? 'user' : 'users'} online`}
       title={`${count} ${count === 1 ? 'user' : 'users'} online`}
-      className="hidden sm:inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md border border-border bg-surface text-xs text-muted"
+      className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md border border-border bg-surface text-xs text-muted"
     >
       <span className="relative flex h-2 w-2" aria-hidden>
         <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 animate-ping" />

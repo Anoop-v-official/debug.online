@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSeo } from '../lib/seo';
 import { toolBySlug, categoryLabels, type Category } from '../lib/tools';
+import { countryName, flagEmoji } from '../lib/countries';
 
 interface ToolRow {
   slug: string;
@@ -14,12 +15,19 @@ interface StatsResponse {
   totalTools: number;
 }
 
+interface CountryRow {
+  code: string;
+  count: number;
+}
+
 interface OverviewResponse {
   liveUsers: number;
   totalVisits: number;
   distinctTools: number;
   topTool: string | null;
   topToolCount: number;
+  countries: CountryRow[];
+  distinctCountries: number;
 }
 
 const CAT_COLOR: Record<Category, string> = {
@@ -137,10 +145,63 @@ export function Stats() {
               value={data.totalCount.toLocaleString()}
             />
             <Stat
-              label="Distinct tools used"
-              value={overview.distinctTools.toLocaleString()}
+              label="Countries"
+              value={overview.distinctCountries.toLocaleString()}
             />
           </div>
+        </section>
+      ) : null}
+
+      {overview && overview.countries.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="text-2xs uppercase tracking-widest font-mono text-subtle">
+              Visitors by country
+            </div>
+            <div className="text-2xs font-mono text-subtle">
+              top 10 of {overview.distinctCountries.toLocaleString()}
+            </div>
+          </div>
+          <ol className="space-y-1.5">
+            {(() => {
+              const max = overview.countries[0]?.count ?? 0;
+              return overview.countries.map((c, i) => {
+                const pct = max > 0 ? (c.count / max) * 100 : 0;
+                return (
+                  <li
+                    key={c.code}
+                    className="rounded-md border border-border bg-surface px-3 py-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xs text-subtle font-mono w-6 text-right tabular-nums">
+                        {i + 1}
+                      </span>
+                      <span className="text-lg leading-none" aria-hidden>
+                        {flagEmoji(c.code)}
+                      </span>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-sm text-text truncate">
+                            {countryName(c.code)}
+                          </span>
+                          <span className="text-2xs text-subtle font-mono tabular-nums shrink-0">
+                            {c.count.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="relative h-1.5 rounded-full bg-bg overflow-hidden">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-accent/30"
+                            style={{ width: `${pct}%` }}
+                            aria-hidden
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              });
+            })()}
+          </ol>
         </section>
       ) : null}
 

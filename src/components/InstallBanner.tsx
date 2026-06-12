@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
+import { getConsent, subscribeConsent } from '../lib/consent';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -23,6 +24,15 @@ function recentlyDismissed(): boolean {
 export function InstallBanner() {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
+  const [consentSettled, setConsentSettled] = useState(getConsent() !== 'pending');
+
+  // Watch consent — only allow the install prompt to appear after the cookie
+  // banner has been dismissed, so the two never overlap on first visit.
+  useEffect(() => {
+    return subscribeConsent((s) => {
+      if (s !== 'pending') setConsentSettled(true);
+    });
+  }, []);
 
   useEffect(() => {
     if (recentlyDismissed()) return;
@@ -30,8 +40,6 @@ export function InstallBanner() {
     function onPrompt(e: Event) {
       e.preventDefault();
       setPromptEvent(e as BeforeInstallPromptEvent);
-      // Slight delay so the banner doesn't fight first-paint.
-      window.setTimeout(() => setVisible(true), 800);
     }
 
     function onInstalled() {
@@ -47,6 +55,16 @@ export function InstallBanner() {
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
+
+  // Surface the banner only after BOTH conditions are met: we have a prompt
+  // event waiting AND the cookie banner is gone. The 800ms delay avoids
+  // fighting first-paint when both clear at the same time.
+  useEffect(() => {
+    if (!promptEvent) return;
+    if (!consentSettled) return;
+    const id = window.setTimeout(() => setVisible(true), 800);
+    return () => window.clearTimeout(id);
+  }, [promptEvent, consentSettled]);
 
   function dismiss() {
     setVisible(false);
