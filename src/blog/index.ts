@@ -12,6 +12,36 @@ export interface PostMeta {
 
 export const posts: PostMeta[] = [
   {
+    slug: 'cidr-for-cloud-engineers',
+    title: 'CIDR for cloud engineers: VPC sizing without the bitmath in your head',
+    description:
+      'Every cloud engineer hits the moment of picking a VPC CIDR and freezes. Here is the practical bitmath: how prefixes work, how to size subnets across AZs, and how to avoid overlapping with the network you will eventually peer with.',
+    publishedAt: '2026-06-02',
+    readingTimeMin: 8,
+    tags: ['cidr', 'networking', 'aws', 'vpc', 'cloud'],
+    Component: lazy(() => import('./posts/cidr-for-cloud-engineers')),
+  },
+  {
+    slug: 'hmac-webhook-security',
+    title: 'HMAC for webhook security: the verification that ships',
+    description:
+      'Webhook signatures separate "claims to come from Stripe" from "actually came from Stripe". Here is how HMAC works, what providers expect, and the three things every verifier must get right.',
+    publishedAt: '2026-06-01',
+    readingTimeMin: 9,
+    tags: ['hmac', 'webhooks', 'security', 'crypto'],
+    Component: lazy(() => import('./posts/hmac-webhook-security')),
+  },
+  {
+    slug: 'chmod-permissions-explained',
+    title: 'Unix permissions explained: 755, 644, 600 and the rest',
+    description:
+      'Why is 755 "executable for owner, readable for everyone"? Once you see the bitmath, file permissions stop being arbitrary numbers. The full mental model in under 1500 words.',
+    publishedAt: '2026-05-31',
+    readingTimeMin: 8,
+    tags: ['unix', 'permissions', 'chmod', 'security'],
+    Component: lazy(() => import('./posts/chmod-permissions-explained')),
+  },
+  {
     slug: 'regex-catastrophic-backtracking',
     title: 'Regex catastrophic backtracking: how to spot it before production does',
     description:

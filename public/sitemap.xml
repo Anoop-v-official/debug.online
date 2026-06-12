@@ -535,6 +535,24 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://debugdaily.online/blog/cidr-for-cloud-engineers</loc>
+    <lastmod>2026-06-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://debugdaily.online/blog/hmac-webhook-security</loc>
+    <lastmod>2026-06-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://debugdaily.online/blog/chmod-permissions-explained</loc>
+    <lastmod>2026-06-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://debugdaily.online/blog/regex-catastrophic-backtracking</loc>
     <lastmod>2026-06-12</lastmod>
     <changefreq>monthly</changefreq>

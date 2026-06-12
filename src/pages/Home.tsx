@@ -24,6 +24,7 @@ import { toolBySlug } from '../lib/tools';
 import { useFavoritesStore } from '../store/favorites';
 import { sniff, type SniffResult } from '../lib/sniff';
 import { setSmartPaste } from '../lib/smartPaste';
+import { TrendingTool } from '../components/TrendingTool';
 
 type RoleCategory = 'backend' | 'frontend' | 'devops' | 'sysadmin' | 'security';
 type Filter = 'all' | 'trending' | 'new' | 'favorites';
@@ -1206,7 +1207,9 @@ export function Home({ onOpenPalette }: HomeProps) {
 
         {smartMatch ? (
           <SmartPasteBanner match={smartMatch} onOpen={() => openSmart(smartMatch)} />
-        ) : null}
+        ) : (
+          <TrendingTool />
+        )}
 
         <FilterChips active={filter} setActive={setFilter} />
 

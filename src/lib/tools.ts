@@ -849,15 +849,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Walks a sample JSON value and emits one or more `export interface` declarations, naming nested objects after their key. Arrays of mixed types collapse into a union.',
+        'Pastes a JSON sample and emits one or more TypeScript `export interface` declarations that describe its shape. Nested objects become their own interfaces named after the property they belong to; arrays of mixed types collapse into a union; primitives map to the natural TypeScript counterpart. Useful for bootstrapping types from an API response when there is no OpenAPI spec, or for catching schema drift by re-running against a fresh sample and diffing.',
+      howItWorks: [
+        'The tool parses the JSON, walks the resulting JavaScript value, and recursively visits each property. For objects, it generates an interface with the property name capitalized; for arrays, it inspects the items and produces an element type; for primitives, it maps to `string`, `number`, `boolean` or `null`.',
+        'Arrays of objects with consistent shapes share a single interface. Arrays of mixed primitive types become a union (`(string | number)[]`). Nested arrays preserve their depth.',
+        'The output is plain TypeScript text — copy and paste into your project. The inferred types are a starting point: real schemas often have optional fields that happen to be present in your sample, or enums that look like plain strings.',
+      ],
       useCases: [
-        'Bootstrapping types from an API response when there\'s no OpenAPI spec.',
-        'Catching schema drift by re-running against a fresh sample and diffing.',
-        'Converting a fixture file into a typed import for tests.',
+        'Bootstrapping types from an API response when there is no OpenAPI spec or backend code to mirror.',
+        'Catching schema drift by re-running against a fresh sample and diffing the generated interfaces.',
+        'Converting a fixture file into a typed import for tests so the test data matches the contract.',
+        'Generating types for a webhook payload you have a sample of but no documentation.',
+        'Documenting a legacy API by inferring types from real production responses.',
+        'Building a starting point for a Zod / io-ts / valibot schema by translating the TypeScript output by hand.',
+      ],
+      examples: [
+        {
+          title: 'A nested user object',
+          input: '{"id":42,"email":"jane@example.com","roles":["admin","editor"],"profile":{"name":"Jane","age":30}}',
+          output:
+            'export interface Root {\n  id: number;\n  email: string;\n  roles: string[];\n  profile: Profile;\n}\n\nexport interface Profile {\n  name: string;\n  age: number;\n}',
+          note: 'Two interfaces — one for the root, one for the nested profile. Names are derived from the property path.',
+        },
+        {
+          title: 'Mixed array',
+          input: '{"items":[1, "two", 3]}',
+          output: 'export interface Root {\n  items: (number | string)[];\n}',
+          note: 'Arrays of mixed primitives become unions. For mixed objects, you may want to use discriminated unions by hand.',
+        },
       ],
       gotchas: [
-        'Types are inferred from one sample — fields that happen to be `null` will type as `null`, and missing optional fields will not be marked `?`. Treat the output as a starting point.',
-        'Identical-looking nested objects get separate interfaces, not deduped. Rename and reuse by hand.',
+        'Types are inferred from a single sample. A field that happens to be `null` in your sample will type as `null` — adjust to `string | null` (or whatever the real type is) when the field is sometimes present.',
+        'Missing-but-actually-optional fields are not marked with `?`. If your API returns a property in 70% of cases, the tool cannot tell from one sample; mark optional fields by hand.',
+        'Identical-looking nested objects get separate interfaces, not deduped. If you have a `User` shape repeated in three places, rename and reuse by hand.',
+        'Numeric literal types are NOT inferred. A field with value `42` types as `number`, not `42`. For enums or discriminated unions, refine manually.',
+        'Date strings type as `string` because JSON has no date type. If you parse them client-side, add a runtime guard and re-type to `Date`.',
+        'For very large JSON samples (hundreds of nested levels), the generated interface tree can be unwieldy. Consider trimming the sample to the parts you actually use.',
+      ],
+      faq: [
+        {
+          q: 'Does this generate JSDoc, Zod or io-ts schemas?',
+          a: 'No — only plain TypeScript interfaces. To get a runtime validator, run the output through a tool like ts-to-zod, or use a dedicated JSON-Schema-to-Zod pipeline.',
+        },
+        {
+          q: 'How do I handle optional fields?',
+          a: 'The tool cannot infer optionality from a single sample. Provide multiple samples and diff the generated interfaces, then merge by adding `?` to fields that appear inconsistently.',
+        },
+        {
+          q: 'Are numbers always `number`?',
+          a: 'Yes. TypeScript has no separate integer/float types — `number` covers both. If you want to enforce integer constraints, use branded types or a runtime validator.',
+        },
+        {
+          q: 'What about deeply nested generic responses (e.g., GraphQL)?',
+          a: 'It works, but the generated nesting can be deep. GraphQL responses often have specific tooling (graphql-codegen) that produces cleaner types directly from the schema.',
+        },
+        {
+          q: 'Does my JSON get uploaded?',
+          a: 'No. The conversion runs entirely in your browser. No payload leaves the tab.',
+        },
       ],
     },
   },
@@ -897,14 +946,57 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Computes a longest-common-subsequence diff between two text blobs and renders the unified result with `+`, `-` and unchanged lines.',
+        'Compares two text blobs line by line using the standard longest-common-subsequence (LCS) algorithm — the same approach git uses internally — and renders the result with added, removed and unchanged lines color-coded. Useful for quickly comparing two configs, two JSON payloads, two API responses, or two versions of any text file without opening a git client. Runs entirely in your browser.',
+      howItWorks: [
+        'The diff algorithm finds the longest common subsequence between the two inputs, then walks both texts marking lines as additions (only in the right), deletions (only in the left) or unchanged.',
+        'The rendered output uses the unified format that has been the convention since the original Unix diff: `-` prefix for removed lines, `+` prefix for added lines, no prefix for unchanged. Side-by-side rendering pairs the two columns visually.',
+        'For long files, only the lines that change (plus a small amount of context above and below) are shown. Long runs of unchanged code are collapsed for readability.',
+      ],
       useCases: [
-        'Comparing two versions of a config file when you don\'t want to open a git client.',
+        'Comparing two versions of a config file when you do not want to open a git client.',
         'Spotting what changed in a copy-pasted JSON response between two requests.',
         'Reviewing an LLM\'s suggested edit before you apply it.',
+        'Comparing two .env files to see what differs between dev and prod.',
+        'Confirming that a refactor preserved structure by diffing the formatted output.',
+        'Auditing a third-party-supplied config update against your existing version.',
+      ],
+      examples: [
+        {
+          title: 'A small config change',
+          input: 'Left:\nport=8080\nhost=localhost\ndebug=false\n\nRight:\nport=8080\nhost=0.0.0.0\ndebug=true',
+          output:
+            '  port=8080\n- host=localhost\n+ host=0.0.0.0\n- debug=false\n+ debug=true',
+          note: 'Two lines changed. The unchanged port line is preserved as context.',
+        },
       ],
       gotchas: [
-        'Diffs are line-based — a single character change in a long line shows the whole line as add+del. For prose, that may be noisy.',
+        'Diffs are line-based. A single-character change in a long line shows the whole line as add + delete. For prose with long lines, this can be noisy — consider a word-level diff tool for that.',
+        'Whitespace matters by default. Two lines that differ only by trailing whitespace are reported as changed. Strip trailing whitespace if you do not care.',
+        'Reordered identical lines produce a delete + add pair, even though the content is unchanged at the file level. Sort both inputs first if order does not matter for your case.',
+        'The algorithm is O(N×M) in the worst case for inputs with no shared lines. For very large files (tens of thousands of lines), use git diff or a dedicated CLI tool.',
+        'Binary content (paste of a PDF, image bytes) will produce nonsense output. The tool is for text only.',
+      ],
+      faq: [
+        {
+          q: 'Is the output the same as `git diff`?',
+          a: 'Conceptually yes. Both use LCS-based diff. The output format and context-line count may differ slightly, but the conclusions about what changed will match.',
+        },
+        {
+          q: 'Does the tool support word-level or character-level diff?',
+          a: 'Not currently — diffs are line-based. For prose where word-level diff matters, tools like wdiff or diff-match-patch are better suited.',
+        },
+        {
+          q: 'How big can the inputs be?',
+          a: 'Comfortable up to ~10,000 lines per side. Beyond that, browsers can stall during layout because the rendered diff has many DOM nodes. For larger files, use a CLI.',
+        },
+        {
+          q: 'Can I ignore whitespace?',
+          a: 'Not yet. Trim trailing whitespace and normalize line endings in your inputs first if needed. CRLF vs LF differences will show as every line being changed — convert both to LF before comparing.',
+        },
+        {
+          q: 'Is my text uploaded anywhere?',
+          a: 'No. The diff runs entirely in your browser.',
+        },
       ],
     },
   },
@@ -972,11 +1064,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Tokenizes the input on word boundaries (camel humps, dashes, underscores, whitespace) and recomposes it in every common case style.',
+        'Tokenizes any string on word boundaries — camel humps, dashes, underscores, whitespace, even punctuation — then recomposes it in every common case style at once: camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, Title Case, sentence case, UPPERCASE and lowercase. Useful when porting an identifier between languages with different naming conventions, or when generating a slug from a human-readable title.',
+      howItWorks: [
+        'The tool splits the input into "words" by detecting transitions: a lowercase-to-uppercase transition (camel hump), an underscore or dash, a space, a punctuation mark. Numbers are kept attached to the preceding word.',
+        'The resulting word list is then rejoined according to each case style: camelCase joins with the first word lowercased and the rest capitalized; snake_case joins with underscores and all lowercase; CONSTANT_CASE same but uppercase; kebab-case joins with dashes; Title Case capitalizes each word; sentence case capitalizes only the first.',
+        'Acronyms are detected when multiple uppercase letters appear consecutively. `parseHTTPRequest` tokenizes as `parse / HTTP / Request`, which round-trips cleanly back to camel form.',
+      ],
       useCases: [
-        'Renaming an identifier across languages where conventions differ (e.g. JS camelCase → Python snake_case).',
-        'Generating a slug from a human-readable title.',
-        'Building constant names from prose for an enum.',
+        'Renaming an identifier across languages where conventions differ (JavaScript camelCase → Python snake_case → Ruby snake_case → C# PascalCase).',
+        'Generating a slug from a human-readable title for a URL.',
+        'Building constant names from prose for an enum (`User Active` → `USER_ACTIVE`).',
+        'Converting a CSV column header to a database column name (`First Name` → `first_name`).',
+        'Producing CSS class names from designer-supplied component names.',
+        'Normalizing a hand-typed identifier before using it in code generation.',
+      ],
+      examples: [
+        {
+          title: 'Multiple targets from one source',
+          input: 'parseHttpRequest',
+          output:
+            'camelCase:     parseHttpRequest\nPascalCase:    ParseHttpRequest\nsnake_case:    parse_http_request\nCONSTANT_CASE: PARSE_HTTP_REQUEST\nkebab-case:    parse-http-request\nTitle Case:    Parse Http Request',
+          note: 'Acronyms like HTTP are normalized to title case to avoid `parseHTTPRequest` → `parse_h_t_t_p_request`.',
+        },
+        {
+          title: 'From prose',
+          input: 'User First Name Required',
+          output:
+            'camelCase:     userFirstNameRequired\nCONSTANT_CASE: USER_FIRST_NAME_REQUIRED\nslug:          user-first-name-required',
+          note: 'Useful for generating identifiers from form field labels or i18n keys.',
+        },
+      ],
+      gotchas: [
+        'Acronym handling is heuristic. `XMLParser` could tokenize as XML / Parser or as X / M / L / Parser depending on the rules. Most tools (including this one) treat runs of uppercase as a single token.',
+        'Unicode word boundaries get tricky. Greek letters in identifiers, CJK text mixed with Latin, or emoji can produce unexpected tokenizations. For non-Latin scripts, check the output before relying on it.',
+        'Numbers attach to whichever side the input had them on. `oauth2Provider` tokenizes as `oauth2 / Provider`, so the snake form is `oauth2_provider`, not `o_auth_2_provider`.',
+        'Some target conventions reserve certain words. Python avoids `class` as an identifier; Java avoids `default`. The case converter does not flag these — you have to check.',
+        'Round-tripping is not always perfect. Convert `camelCase` to `snake_case` and back, and you get the original; convert to `kebab-case` and back to camel and you do too. But if the original had an unusual structure (`HTTPServer`), expect minor casing drift.',
+      ],
+      faq: [
+        {
+          q: 'How does it handle acronyms like HTTP, URL, ID?',
+          a: 'Runs of consecutive uppercase letters are treated as a single word. So `parseHTTPRequest` becomes three tokens (parse, HTTP, Request), and the snake form is `parse_http_request`, not `parse_h_t_t_p_request`.',
+        },
+        {
+          q: 'Which case is best for which language?',
+          a: 'JavaScript / Java identifiers: camelCase. Python / Ruby / Rust functions: snake_case. C# / Go exported / TypeScript types: PascalCase. CSS classes / HTML attributes / URLs: kebab-case. Constants: CONSTANT_CASE. Database columns: snake_case (universally).',
+        },
+        {
+          q: 'Can I convert just to a slug?',
+          a: 'kebab-case is essentially a slug. For more aggressive slug generation (Unicode normalization, removing stop words, ensuring URL safety), use the dedicated Slug Generator tool.',
+        },
+        {
+          q: 'Does this work for non-English text?',
+          a: 'Mostly. Latin-script languages with accents work fine. CJK and right-to-left scripts may not tokenize as expected — these languages typically do not have "case" the same way English does.',
+        },
+        {
+          q: 'Is my input uploaded?',
+          a: 'No. Case conversion runs entirely in your browser.',
+        },
       ],
     },
   },
@@ -2147,15 +2292,58 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'A lightweight in-browser REST client. Pick a method, add headers, optionally send a body, and inspect the parsed response with timing.',
+        'A lightweight in-browser REST client. Pick a method (GET, POST, PUT, PATCH, DELETE), add headers, optionally send a JSON or text body, and inspect the response with timing, status, parsed body and the full set of returned headers. The same kind of thing you would use Postman or Insomnia for, in a webpage, with no install. Subject to browser CORS rules — see gotchas.',
+      howItWorks: [
+        'The tool uses the browser-native `fetch` API to make the request. The request method, URL, headers and body come from the form; the response comes back with status code, response headers, and body bytes that are parsed as JSON (or text) for display.',
+        'Timing is measured with `performance.now()` around the fetch call — close to wall-clock latency, including DNS, TCP, TLS, request, server work and response.',
+        'The pretty-printed response uses the same JSON formatter on this site, so deeply nested payloads are readable. Non-JSON responses are shown verbatim.',
+      ],
       useCases: [
-        'Smoke-testing an internal API without spinning up Postman.',
-        'Sharing a request URL plus headers with a teammate via a single screenshot.',
+        'Smoke-testing an internal API without spinning up Postman or Insomnia.',
+        'Sharing a request URL plus headers with a teammate by sending them the share URL.',
         'Quickly checking what your API returns for a given Authorization header.',
+        'Verifying a webhook receiver responds correctly to a POST with a sample payload.',
+        'Confirming an endpoint applies the right rate-limit headers (X-RateLimit-*).',
+        'Building up a request by trial and error before translating it into a curl command or code.',
+      ],
+      examples: [
+        {
+          title: 'A basic authenticated GET',
+          input:
+            'Method: GET\nURL: https://api.example.com/users/me\nHeaders:\n  Authorization: Bearer eyJ...',
+          output: 'Status: 200\nLatency: 142ms\nBody: { "id": 42, "email": "jane@example.com" }',
+          note: 'The response body is pretty-printed JSON. Status code and timing appear above.',
+        },
       ],
       gotchas: [
-        'Browser CORS will block requests to APIs that do not return permissive `Access-Control-Allow-Origin` headers — there is no way around this from a webpage. The Linux desktop build of debugdaily skips this restriction.',
-        'Sensitive bearer tokens are visible to any extension installed in your browser. For high-stakes secrets, use the desktop app or curl.',
+        'Browser CORS will block requests to APIs that do not return permissive `Access-Control-Allow-Origin` headers. There is no way around this from a webpage. The Linux desktop build of debugdaily (Tauri) bypasses CORS because it talks to APIs from a native process.',
+        'Sensitive bearer tokens are visible to any extension installed in your browser, and visible in the page DOM. For high-stakes secrets, use the desktop app or curl.',
+        'A "200 OK" with an empty or non-JSON body is normal for some APIs. The tool reports the actual response — it does not assume.',
+        'Cookies are not sent by default (no `credentials: include`). If your API requires session cookies, you may see 401s here even though the same request would work from your app.',
+        'Some APIs require specific Content-Type values (`application/x-www-form-urlencoded` instead of JSON). The tool defaults to JSON for bodies but lets you override the header.',
+        'Streaming responses (SSE, chunked) are read fully before display. For long-running endpoints, this will appear to hang.',
+      ],
+      faq: [
+        {
+          q: 'Why does my request fail with "CORS error"?',
+          a: 'The target API did not return an `Access-Control-Allow-Origin` header that includes our origin, so the browser blocked the response from JavaScript. This is a browser security feature, not a tool bug. Test the same request from curl or the desktop app to confirm it works server-side.',
+        },
+        {
+          q: 'Can I send cookies?',
+          a: 'Not currently — the tool uses default fetch credentials. If you need cookie-based auth, log into the target API in a separate tab and try the request from there (some APIs allow that), or use curl with --cookie.',
+        },
+        {
+          q: 'Is my request body uploaded to debugdaily?',
+          a: 'No. The fetch call goes from your browser directly to the target API. Our servers are not in the path.',
+        },
+        {
+          q: 'How do I send a file?',
+          a: 'File uploads are not currently supported in the body. For multipart uploads, use the curl builder to generate the command, or run the request from a real tool like Postman.',
+        },
+        {
+          q: 'Can I save requests like in Postman?',
+          a: 'You can share the current request as a URL via the Share button — open the link to recreate the state. Saved collections are not implemented yet.',
+        },
       ],
     },
   },
@@ -2349,15 +2537,65 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Server-side GET with manual redirect following. Reports each hop, the final status, and total time end-to-end. Good for "is it down for me, or down for everyone?"',
+        'Does a server-side HTTP request to any public URL and reports the result: status code, the full redirect chain (each hop with its own status), total response time end-to-end, and whether the page loaded successfully. Useful for confirming a site is actually up from outside your network ("is it down for me, or down for everyone?"), spot-checking deploys, and auditing redirect chains that hurt SEO.',
+      howItWorks: [
+        'A serverless function does a GET against the target URL with manual redirect handling. Each response with a 3xx status is followed up to 5 hops total; each hop is recorded with its status and Location header.',
+        'Total time is measured from the start of the first connection to the end of the final response body. Per-hop time is not separately measured (most of the latency is in the final hop anyway).',
+        'The check uses a generic User-Agent string and no authentication. Sites that gate content behind login, cookies, or CAPTCHAs will return whatever they show anonymous visitors — usually a 200 with a login page, or a 401.',
+      ],
       useCases: [
-        'Confirming a CDN issue isn\'t local before paging on-call.',
-        'Auditing a redirect chain for unnecessary hops that hurt SEO.',
-        'Spot-checking a deploy after pushing.',
+        'Confirming a CDN or DNS issue is not local before paging on-call.',
+        'Auditing a redirect chain for unnecessary hops that hurt SEO (each 301 adds ~50–100ms of latency).',
+        'Spot-checking a deploy after pushing — does the URL still respond, what does it respond with.',
+        'Verifying a marketing redirect goes to the right destination across all the alias domains.',
+        'Catching an accidental 302 where you meant 301, or vice versa.',
+        'Quick sanity check after a TLS certificate rotation — the cert should still validate end-to-end.',
+      ],
+      examples: [
+        {
+          title: 'A site with a single redirect',
+          input: 'http://example.com',
+          output:
+            'Hop 1: 301 Moved Permanently → https://example.com\nHop 2: 200 OK\nTotal time: 234ms',
+          note: 'The http → https redirect is the most common single-hop chain on the modern web.',
+        },
+        {
+          title: 'A chain that is too long',
+          input: 'http://a.example/r',
+          output:
+            'Hop 1: 302 → http://b.example/r\nHop 2: 302 → http://c.example/r\nHop 3: 302 → http://d.example/r\nHop 4: 302 → http://e.example/r\nHop 5: 302 → http://f.example/r\nGave up at 5 hops — final destination not reached',
+          note: 'Browsers stop following at ~20 redirects. We stop at 5 because a chain longer than that is almost always a bug.',
+        },
       ],
       gotchas: [
-        'Single-region check — for true "down for everyone" answers use a multi-region monitor.',
-        'Some sites return 200 to bots but not to real users — this tool sends a generic User-Agent.',
+        'Single-region check — for true "down for everyone" answers use a multi-region monitor (Pingdom, UptimeRobot, Better Uptime, Statuscake).',
+        'Some sites return 200 to bots but block real browsers, or vice versa. This tool sends a generic User-Agent; the result may differ from what a real browser sees.',
+        'The check is one-shot. For continuous monitoring you want a service that runs every minute and alerts on failure.',
+        'Geographic routing (CloudFlare, Akamai, Fastly) means the result here may differ from a check from another region. The tool runs from a single Vercel region.',
+        'IPv6-only hosts may fail because the check runs over the resolver\'s preferred address family — if there is no IPv4 record, dial timeouts are possible.',
+        'A 200 result does not mean the page is functional. The page can return 200 with an error message in the body. Use a real synthetic-monitoring tool for content checks.',
+      ],
+      faq: [
+        {
+          q: 'Why does my site say "up" here but my users report it is down?',
+          a: 'Most likely a region or ISP-specific routing problem. The check ran from a different network than your users. Use a multi-region monitor to see whether problems are localized.',
+        },
+        {
+          q: 'How many redirects do you follow?',
+          a: 'Up to 5. Most legitimate redirects are 1 or 2 hops; chains longer than that almost always indicate a misconfiguration or a redirect loop.',
+        },
+        {
+          q: 'Does this check HTTPS certificates?',
+          a: 'It connects over HTTPS but does not report cert details. For TLS-specific checks (expiry, chain, SAN) use the SSL Check tool.',
+        },
+        {
+          q: 'What does "Status: -1" or "Error" mean?',
+          a: 'The connection failed before getting a status code. Common causes: DNS resolution failed, the host refused the connection, the TLS handshake failed, or the request timed out.',
+        },
+        {
+          q: 'Is the URL recorded anywhere?',
+          a: 'The serverless function logs the URL and result for rate limiting. We do not store or share check history.',
+        },
       ],
     },
   },
@@ -2777,15 +3015,65 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Two date/time inputs, multiple ways to read the gap: total counts at every common granularity, a calendar-aware "1y 2m 5d 6h" breakdown, and a working-days (Mon–Fri) count.',
+        'Pick two dates (or two date+time pairs) and the tool reports the gap between them in several useful ways at once: total seconds, minutes, hours, days and weeks; a calendar-aware breakdown ("1 year 2 months 5 days 6 hours"); and a working-days count that counts only Monday through Friday. Useful for project planning, contract math, SLA compliance windows, and answering "how long ago was X" without opening a spreadsheet.',
+      howItWorks: [
+        'The two inputs are parsed as JavaScript Date values. The total-difference figures (seconds, minutes, hours, days, weeks) come from a single subtraction of UTC milliseconds — these are exact and unambiguous.',
+        'The calendar-aware breakdown uses calendar walking: starting from the earlier date, add whole years until you would overshoot, then whole months, then whole days, then hours/minutes/seconds. This is what most people mean when they say "2 years and 3 months apart".',
+        'The working-days count iterates day by day between the two dates and skips Saturday and Sunday. It does NOT skip holidays — holidays vary by jurisdiction and would require a configurable database.',
+      ],
       useCases: [
         'Counting working days between two project milestones.',
         'Sanity-checking a contract start/end period.',
-        'Quickly answering "how long ago was…" without spreadsheet formulas.',
+        'Quickly answering "how long ago was…" without opening a spreadsheet or Stack Overflow.',
+        'Computing a person\'s age in years and months from a birth date.',
+        'Verifying an SLA window — "how long was the outage in business hours".',
+        'Estimating elapsed time for an invoice or time-tracking entry.',
+      ],
+      examples: [
+        {
+          title: 'Calendar-aware breakdown',
+          input: 'From: 2024-01-15  →  To: 2026-06-20',
+          output:
+            'Total: 887 days, 76,636,800 seconds\nBreakdown: 2 years, 5 months, 5 days\nWorking days: 633',
+          note: 'The breakdown is what humans usually want. The total in seconds is what code usually wants.',
+        },
+        {
+          title: 'A short gap',
+          input: 'From: 2026-06-03 09:00  →  To: 2026-06-04 17:00',
+          output:
+            'Total: 32 hours, 1,920 minutes\nBreakdown: 1 day, 8 hours\nWorking days: 2',
+          note: 'A 32-hour gap straddles a workday boundary, so the working-day count is 2.',
+        },
       ],
       gotchas: [
-        'Working-days count assumes Mon–Fri are workdays — does not account for holidays.',
-        'Months don\'t have a fixed number of days, so the "y/m/d" breakdown can shift if you swap the two dates.',
+        'Working-days count assumes Mon–Fri are workdays. It does NOT account for public holidays — Independence Day, Christmas, New Year, Easter and country-specific holidays all count as working days here. For HR-grade calculations, use a holiday-aware calendar.',
+        'Months do not have a fixed number of days, so the "y/m/d" breakdown can shift if you swap the two dates. Going from Jan 31 to Feb 28 is "28 days" or "1 month"? The calendar walker says 1 month; total days says 28.',
+        'Time zones can produce surprises. "2026-06-03" without a time is interpreted in your local zone. If two parties in different zones each enter "today", the gap might be hours off.',
+        'Daylight Saving Time transitions add or remove an hour from the gap. A gap that spans the spring-forward boundary is 1 hour shorter in clock time than in elapsed time.',
+        'Leap seconds are not modeled. They are effectively never visible in date math.',
+        'Very long gaps (decades) can be computed but the calendar-aware breakdown may surprise people who expected a simple year count.',
+      ],
+      faq: [
+        {
+          q: 'Why does the year/month breakdown look weird?',
+          a: 'Months and years have variable length. "1 year and 2 months" can mean 425 days or 427 days depending on which months are involved. The breakdown is the most natural human reading, not the most precise.',
+        },
+        {
+          q: 'Can I include weekends in the working-day count?',
+          a: 'Not currently. The tool always treats Saturday and Sunday as non-working. If your business runs 7 days, use the total-days figure instead.',
+        },
+        {
+          q: 'Does this account for public holidays?',
+          a: 'No. Holidays vary too much by country (and even by state within a country) to ship a default list. For HR or payroll-grade working-day counts, use a country-specific business-day library.',
+        },
+        {
+          q: 'What is the difference between "total days" and the calendar "days" component?',
+          a: 'Total days is just the raw count: 730 for two years. The calendar breakdown might say "2 years, 0 days" for the same gap — meaning two calendar years exactly, no leftover.',
+        },
+        {
+          q: 'Can I use ISO 8601 timestamps?',
+          a: 'Yes — `2026-06-03T09:00:00Z` works. Anything the browser Date constructor can parse is accepted. ISO with an explicit zone is the safest format.',
+        },
       ],
     },
   },
@@ -2803,15 +3091,59 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Form inputs become a properly shell-escaped `curl` command. Single-quotes anything containing whitespace, escapes embedded quotes correctly, and breaks long commands across lines for readability.',
+        'Fill in a visual form — method, URL, headers, body, common flags — and the tool produces a properly shell-escaped `curl` command that is ready to paste into a terminal. Saves you the headache of escaping quotes by hand, ordering flags correctly, and remembering whether `-H` is repeatable. Equally useful for documenting an API call in a bug report, sharing a reproduction with a teammate, or generating a paste-ready command for a runbook or CI step.',
+      howItWorks: [
+        'On every change, the form state is serialized into a `curl` command line. The method becomes `-X METHOD`, each header becomes `-H "Name: Value"`, the body becomes `-d "..."` (with proper escaping), and any extra flags you toggle (follow redirects, ignore TLS errors, verbose) are appended.',
+        'String escaping uses single-quotes by default — the safest in bash/zsh, since nothing inside single quotes is interpreted. Single quotes inside the value are handled with the `\\\'` trick (close quote, escape, single quote, reopen).',
+        'Multi-flag commands are broken across lines with `\\` continuations once they exceed a threshold, so the output reads cleanly even when copied into a markdown code block.',
+      ],
       useCases: [
         'Sharing an API call with a teammate without screenshotting Postman.',
-        'Documenting a webhook reproduction in a bug report.',
+        'Documenting a webhook reproduction in a bug report or Linear ticket.',
         'Generating a paste-ready command for a CI step or runbook.',
+        'Translating a Postman or browser DevTools request into a curl one-liner.',
+        'Producing a snippet for an API doc that shows how to call a specific endpoint.',
+        'Building up complex requests with auth headers and body without escaping by hand.',
+      ],
+      examples: [
+        {
+          title: 'A standard POST with auth and JSON body',
+          input:
+            'Method: POST\nURL: https://api.example.com/users\nHeaders:\n  Authorization: Bearer eyJ...\n  Content-Type: application/json\nBody: {"name":"Jane","role":"admin"}',
+          output:
+            'curl -X POST \'https://api.example.com/users\' \\\n  -H \'Authorization: Bearer eyJ...\' \\\n  -H \'Content-Type: application/json\' \\\n  -d \'{"name":"Jane","role":"admin"}\'',
+          note: 'Single-quoted strings, line continuations for readability. Paste verbatim into any bash/zsh terminal.',
+        },
       ],
       gotchas: [
-        'Body is sent as `--data-raw`, which doesn\'t URL-encode. Use `--data-urlencode` manually if you need that.',
-        'Generated quoting works for bash/zsh. Windows cmd users need to swap single quotes for double, or use WSL.',
+        'Body is sent as `-d` (which is `--data` in long form). That sends the body raw — it does NOT URL-encode. If you need form-encoded bodies, use `--data-urlencode` manually or switch the Content-Type.',
+        'Generated quoting works for bash/zsh and most POSIX shells. Windows cmd users need to swap single quotes for double quotes (and escape internal double quotes), or use WSL / PowerShell.',
+        'Some APIs reject curl\'s default User-Agent (`curl/x.y.z`) as suspicious. Add `-H "User-Agent: ..."` if you hit a 403.',
+        'For binary uploads, use `--data-binary @file` instead of `-d` to prevent newline normalization. The visual form does not handle this — edit by hand.',
+        'Long URLs with query strings should usually be URL-encoded. The tool does not encode the URL field; paste pre-encoded values if special characters are involved.',
+        'curl follows redirects only when you pass `-L`. The form has a toggle; without it, you will see the redirect status, not the final response.',
+      ],
+      faq: [
+        {
+          q: 'What is the difference between -d and --data-raw?',
+          a: '`-d` (--data) URL-encodes some characters by default in certain edge cases. `--data-raw` sends the body exactly as you provide it. For JSON bodies, `--data-raw` is safer. The tool uses `-d` for compactness but you can switch.',
+        },
+        {
+          q: 'How do I send a file?',
+          a: 'For multipart upload, use `-F "field=@/path/to/file"`. For raw binary uploads, use `--data-binary @/path/to/file`. The visual form does not currently support file uploads — edit the command by hand.',
+        },
+        {
+          q: 'Why does my command work in Postman but fail with curl?',
+          a: 'Usually one of: missing Content-Type header, cookies being sent in Postman but not by curl, or auth being added by a Postman environment that you forgot to copy over.',
+        },
+        {
+          q: 'Can I use this for HTTPS APIs with self-signed certs?',
+          a: 'Add the `-k` (insecure) flag to skip certificate verification. The visual form has a toggle. Only use this for development APIs you control.',
+        },
+        {
+          q: 'Will the generated command work in PowerShell?',
+          a: 'PowerShell aliases `curl` to `Invoke-WebRequest`, which uses different syntax. Run the actual curl binary with `curl.exe` and the bash-style syntax will work.',
+        },
       ],
     },
   },
@@ -3012,14 +3344,63 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Inspects the union of keys across every object, optionally flattens nested objects with dot notation, and emits CSV with RFC 4180 quoting.',
+        'Converts a JSON array of objects into a CSV that opens cleanly in Excel, Google Sheets, Numbers or any data-analysis tool. The tool inspects the union of keys across all objects to build the column header, optionally flattens nested objects with dot-notation columns, and quotes fields per RFC 4180 so embedded commas, quotes and newlines round-trip safely. Choose the delimiter (comma, semicolon, tab) for your locale.',
+      howItWorks: [
+        'The JSON is parsed and the tool collects every distinct key from every object in the array. Those keys become the header row. Each object\'s row contains the value for each header, or empty if the object did not have that key.',
+        'Nested objects (when "Flatten" is enabled) are recursively unpacked: `{user: {name: "Jane"}}` becomes a column called `user.name`. Nested arrays become JSON-string cells unless they are leaf-primitive arrays (those become semicolon-joined strings, but this is configurable).',
+        'CSV escaping follows RFC 4180: fields containing the delimiter, a double quote, or a newline are wrapped in double quotes; internal quotes are doubled. The result is parseable by every standards-compliant CSV library.',
+      ],
       useCases: [
-        'Importing an API response into a spreadsheet.',
-        'Preparing data for `pandas.read_csv` or similar.',
-        'Quickly diffing a JSON dataset with column-by-column eyes.',
+        'Importing an API response into a spreadsheet for ad-hoc analysis.',
+        'Preparing data for `pandas.read_csv` or `awk` pipelines.',
+        'Quickly diffing two JSON datasets with column-by-column eyes (CSV diff is more readable than JSON diff).',
+        'Producing a billing or audit export from a JSON log.',
+        'Bulk-loading data into a database via COPY FROM.',
+        'Sharing a JSON snapshot with non-technical stakeholders.',
+      ],
+      examples: [
+        {
+          title: 'Simple flat array',
+          input: '[{"id":1,"name":"Alice"},{"id":2,"name":"Bob","role":"admin"}]',
+          output: 'id,name,role\n1,Alice,\n2,Bob,admin',
+          note: 'The header is the union of keys across all objects. Missing fields become empty cells.',
+        },
+        {
+          title: 'Flattening a nested object',
+          input: '[{"id":1,"user":{"name":"Alice","email":"a@e.com"}}]',
+          output: 'id,user.name,user.email\n1,Alice,a@e.com',
+          note: 'With Flatten on, nested objects unpack to dot-prefixed columns. Without Flatten, the user column would contain a JSON string.',
+        },
       ],
       gotchas: [
-        'Nested arrays inside objects become JSON-string cells. For tabular nested data, pre-process first.',
+        'Nested arrays inside objects become JSON-string cells by default. For tabular nested data, transform the array into one row per item before converting.',
+        'Excel\'s CSV import sometimes mis-detects the delimiter, especially in regions where the spreadsheet locale uses semicolons. If columns look concatenated in Excel, choose the semicolon delimiter and re-export.',
+        'CSV has no native date type. Date values come out as whatever string they were in the JSON. Excel may auto-coerce strings that look like dates, which is sometimes wrong.',
+        'A leading equals sign in a cell (like `=2+2`) is a CSV injection risk in Excel. The tool prefixes such values with a single quote to neutralize it.',
+        'Very large arrays (100,000+ rows) work but may take a few seconds. For multi-million-row exports, use a streaming tool like `jq` + `mlr`.',
+        'Round-tripping CSV → JSON → CSV is generally lossy because types disappear when JSON values stringify into CSV cells.',
+      ],
+      faq: [
+        {
+          q: 'What delimiter should I use?',
+          a: 'Comma is the default and what most tools expect. Semicolon is common in European Excel locales (German, French). Tab is best when fields commonly contain commas or quotes.',
+        },
+        {
+          q: 'How does flattening work for arrays of objects?',
+          a: 'Arrays of primitive values can be joined with semicolons (configurable). Arrays of objects do not flatten cleanly into a 2D table — instead, the array becomes a JSON-string cell. To get a row per nested item, transform the JSON first.',
+        },
+        {
+          q: 'Will my CSV open correctly in Excel?',
+          a: 'For ASCII content with comma delimiter, yes. For non-Latin characters, add a UTF-8 BOM at the start (the tool can do this) so Excel detects the encoding correctly.',
+        },
+        {
+          q: 'Can I go back from CSV to JSON?',
+          a: 'Yes, with the inverse tool elsewhere in the suite (or using `pandas.read_csv(...).to_json(orient="records")`). Round-tripping loses type information — everything becomes strings unless the consumer re-types.',
+        },
+        {
+          q: 'Is my JSON uploaded?',
+          a: 'No. The conversion runs entirely in your browser.',
+        },
       ],
     },
   },
@@ -3037,11 +3418,59 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Round-trips JSON through js-yaml to produce clean YAML output. The inverse of our existing YAML Validator, which handles YAML → JSON.',
+        'Pastes JSON and produces clean YAML with proper indentation, multi-line strings, and block-scalar style for long values. Useful for converting JSON snippets into Kubernetes manifests, Docker Compose files, GitHub Actions workflows or any YAML-first ecosystem. Round-trips through js-yaml so the YAML is canonical and parses back to identical JSON on round-trip.',
+      howItWorks: [
+        'The JSON is parsed into a JavaScript object using JSON.parse. The resulting tree is then dumped to YAML using js-yaml\'s safe-dump, which respects YAML 1.2 rules and produces output every modern YAML parser accepts.',
+        'Indentation is configurable (typically 2 spaces, which matches Kubernetes conventions). Long strings are emitted with the `|` literal-block style by default so they read naturally in the output.',
+        'JSON null becomes YAML null (or ~ depending on style). JSON empty arrays/objects become `[]` and `{}` respectively, which YAML supports as flow style.',
+      ],
       useCases: [
         'Translating a JSON config into a Kubernetes manifest.',
-        'Migrating from a JSON-based config to YAML.',
-        'Quickly diffing two configs in YAML form (more readable than JSON for large nested objects).',
+        'Migrating from a JSON-based config to YAML (or comparing them side by side).',
+        'Quickly diffing two configs in YAML form — large nested objects are more readable in YAML than minified JSON.',
+        'Converting a JSON payload from an API into a fixture YAML file for a test.',
+        'Generating a starting-point Helm values.yaml from a JSON sample.',
+        'Producing a GitHub Actions workflow YAML from a JSON template.',
+      ],
+      examples: [
+        {
+          title: 'A K8s-style deployment',
+          input:
+            '{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"web"},"spec":{"replicas":3,"selector":{"matchLabels":{"app":"web"}}}}',
+          output:
+            'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: web',
+          note: '2-space indent is the Kubernetes convention. Quotes around values are dropped where the YAML 1.2 spec permits.',
+        },
+      ],
+      gotchas: [
+        'YAML 1.1 vs 1.2 differences (the Norway problem — "no" being parsed as boolean false in 1.1) mean a JSON string "no" might round-trip differently in tools still on YAML 1.1. This tool emits 1.2 strict output.',
+        'Multi-line strings in JSON (with embedded newlines) become YAML block scalars. If your downstream consumer cannot handle `|`, switch to flow-style by setting an appropriate flag (manual edit).',
+        'JSON has no native dates, so date-looking strings round-trip as strings. If you want them to become YAML date types, post-process by hand.',
+        'Anchors and aliases (&name / *name) are YAML-only features that have no JSON equivalent. Converting JSON to YAML never produces them; if you want them, refactor by hand after conversion.',
+        'JSON null becomes YAML null. Some K8s consumers prefer empty string instead — adjust if you hit issues.',
+        'Very deep nesting (50+ levels) produces deep YAML indentation that can be hard to read. Consider restructuring at the source.',
+      ],
+      faq: [
+        {
+          q: 'Is the output valid YAML for Kubernetes?',
+          a: 'Yes, assuming the input is valid Kubernetes JSON. The tool produces standard YAML 1.2 that kubectl, helm, and every K8s client accepts.',
+        },
+        {
+          q: 'Can I round-trip JSON → YAML → JSON without loss?',
+          a: 'Yes for primitive types and structure. Comments and YAML-specific features (anchors, tags, block-scalar flavors) are not in the JSON source so are not preserved.',
+        },
+        {
+          q: 'Why are some strings quoted and others not?',
+          a: 'YAML 1.2 allows unquoted strings unless they are ambiguous (could be parsed as a number, boolean, or null) or contain special characters. The tool quotes only when necessary, matching the convention.',
+        },
+        {
+          q: 'How do I convert YAML back to JSON?',
+          a: 'Use the YAML Validator tool, which produces JSON output from YAML input.',
+        },
+        {
+          q: 'Is the conversion lossless for arrays?',
+          a: 'Yes. JSON arrays become YAML sequences (either `- item` style or `[item]` flow style depending on settings).',
+        },
       ],
     },
   },
@@ -3059,14 +3488,64 @@ export const tools: Tool[] = [
     },
     content: {
       about:
-        'Tokenizes the XML into tags + text and re-indents based on depth. Validates the document by parsing it with the browser\'s DOMParser — invalid XML produces a clear error.',
+        'Pretty-prints or minifies XML with proper nesting and indentation while validating the structure as it goes. Built on the browser\'s native DOMParser, so it handles namespaces, attributes, comments, CDATA blocks and processing instructions correctly. Useful for reading SOAP envelopes from logs, inspecting RSS/Atom feeds, deciphering an `AndroidManifest.xml`, or producing a clean version for diffing.',
+      howItWorks: [
+        'DOMParser parses the input into a DOM tree, which surfaces well-formed errors with line numbers. If parsing succeeds, the tree is serialized back with insertions of newlines and indentation at every element boundary.',
+        'Pretty-printing produces one tag per line with consistent indentation (configurable, typically 2 spaces). Minifying does the opposite — strips all insignificant whitespace between tags. Round-tripping preserves semantics; only whitespace changes.',
+        'Comments (`<!-- … -->`) and CDATA blocks (`<![CDATA[…]]>`) are preserved verbatim. Their internal whitespace is untouched because changing it could alter meaning.',
+      ],
       useCases: [
-        'Reading SOAP envelopes from a server log.',
-        'Inspecting an Android `strings.xml` or `AndroidManifest.xml`.',
-        'Diffing two RSS feeds for changes.',
+        'Reading SOAP envelopes copied from a server log.',
+        'Inspecting an Android `strings.xml` or `AndroidManifest.xml` that has been minified for build.',
+        'Diffing two RSS feeds for changes after a feed-generator update.',
+        'Cleaning up an SVG file that has been minified by a build tool.',
+        'Producing a readable version of a Maven `pom.xml` snippet for documentation.',
+        'Validating that a third-party-supplied XML config is well-formed before deploying.',
+      ],
+      examples: [
+        {
+          title: 'Pretty-printing minified XML',
+          input: '<users><user id="1"><name>Alice</name><email>a@e.com</email></user></users>',
+          output:
+            '<users>\n  <user id="1">\n    <name>Alice</name>\n    <email>a@e.com</email>\n  </user>\n</users>',
+          note: 'Self-contained elements stay on one line; nested structure is indented.',
+        },
+        {
+          title: 'A malformed input',
+          input: '<root><unclosed>',
+          output: 'Error: unclosed tag at line 1 column 17',
+          note: 'DOMParser surfaces well-formed errors with their position so you can jump to the spot.',
+        },
       ],
       gotchas: [
-        'CDATA blocks and embedded XML processing instructions are preserved verbatim, not deeply re-indented.',
+        'CDATA blocks and embedded XML processing instructions are preserved verbatim, not deeply re-indented. CDATA exists to carry verbatim text — modifying its whitespace would defeat the point.',
+        'XML namespaces are preserved but namespace prefixes are NOT normalized. If your document mixes `xs:` and `xsd:` for the same namespace URI, the formatter does not unify them.',
+        'Self-closing tags follow the input convention. `<br/>` stays self-closing; `<br></br>` stays as paired tags. Some downstream consumers care about this distinction.',
+        'Encoding declarations in the XML prolog (`<?xml version="1.0" encoding="UTF-8"?>`) are preserved but the tool always operates on UTF-8 strings.',
+        'For very large XML files (megabytes), DOMParser may pause the tab during parsing. Streaming XML parsers are not available in the browser; use xmllint from the command line.',
+        'XML 1.1 has slightly different rules than XML 1.0 (notably character escapes). DOMParser targets XML 1.0; XML 1.1 documents may produce warnings.',
+      ],
+      faq: [
+        {
+          q: 'Does this validate against a schema (XSD, DTD, RelaxNG)?',
+          a: 'No — the tool validates that the XML is well-formed (tags balance, attributes quoted, no illegal characters), but does not check against a schema. For schema validation, use xmllint or a language-specific XSD validator.',
+        },
+        {
+          q: 'How does it handle XML namespaces?',
+          a: 'Namespace declarations and prefixes are preserved verbatim. The tool does not normalize differing prefixes that point at the same URI.',
+        },
+        {
+          q: 'Can I format XML that has invalid characters?',
+          a: 'XML has a strict character set (excluding control characters except tab/newline/CR). Files with stray control characters produce a parse error. Strip the bad bytes first.',
+        },
+        {
+          q: 'Why does my SOAP envelope look different after formatting?',
+          a: 'Whitespace inside elements may be significant for some SOAP processors. If the envelope worked before formatting and stopped after, your processor is treating the new whitespace as content. Use the minify option to strip it back.',
+        },
+        {
+          q: 'Is my XML uploaded?',
+          a: 'No. DOMParser runs in your browser. Nothing is sent to any server.',
+        },
       ],
     },
   },
