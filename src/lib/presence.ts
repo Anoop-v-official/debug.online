@@ -40,10 +40,10 @@ function publish(next: Partial<PresenceState>) {
 
 async function beat() {
   try {
-    const res = await fetch('/api/presence', {
+    const res = await fetch('/api/metrics', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sid: getSid() }),
+      body: JSON.stringify({ kind: 'presence', sid: getSid() }),
     });
     if (!res.ok) return;
     const data = (await res.json()) as { count?: number; total?: number };

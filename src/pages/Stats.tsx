@@ -36,7 +36,7 @@ export function Stats() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/track?limit=50')
+    fetch('/api/metrics?kind=tools&limit=50')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d: StatsResponse) => {
         if (!cancelled) setData(d);

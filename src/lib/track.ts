@@ -29,8 +29,8 @@ export function trackToolOpen(slug: string): void {
 
   // Fire-and-forget. Use sendBeacon when available so the request survives
   // a navigation away; otherwise fall back to fetch with keepalive.
-  const url = '/api/track';
-  const body = JSON.stringify({ slug });
+  const url = '/api/metrics';
+  const body = JSON.stringify({ kind: 'track', slug });
   try {
     if (typeof navigator !== 'undefined' && 'sendBeacon' in navigator) {
       const blob = new Blob([body], { type: 'application/json' });
