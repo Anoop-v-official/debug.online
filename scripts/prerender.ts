@@ -139,6 +139,12 @@ const STATIC_PAGES: RouteMeta[] = [
     description:
       'Live ranking of the most-used tools on debugdaily.online. Updated continuously from real session traffic, no cookies.',
   },
+  {
+    path: '/embed',
+    title: 'Embed Tools — debugdaily',
+    description:
+      'Drop any debugdaily tool into your blog, docs, or website with one line of HTML. Free forever, no API key required.',
+  },
 ];
 routes.push(...STATIC_PAGES);
 

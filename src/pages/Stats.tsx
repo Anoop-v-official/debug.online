@@ -14,6 +14,14 @@ interface StatsResponse {
   totalTools: number;
 }
 
+interface OverviewResponse {
+  liveUsers: number;
+  totalVisits: number;
+  distinctTools: number;
+  topTool: string | null;
+  topToolCount: number;
+}
+
 const CAT_COLOR: Record<Category, string> = {
   encode: 'bg-role-security/40',
   format: 'bg-role-backend/40',
@@ -32,14 +40,23 @@ export function Stats() {
   });
 
   const [data, setData] = useState<StatsResponse | null>(null);
+  const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/metrics?kind=tools&limit=50')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d: StatsResponse) => {
-        if (!cancelled) setData(d);
+    Promise.all([
+      fetch('/api/metrics?kind=tools&limit=50').then((r) =>
+        r.ok ? (r.json() as Promise<StatsResponse>) : Promise.reject(new Error(`HTTP ${r.status}`)),
+      ),
+      fetch('/api/metrics?kind=overview').then((r) =>
+        r.ok ? (r.json() as Promise<OverviewResponse>) : Promise.reject(new Error(`HTTP ${r.status}`)),
+      ),
+    ])
+      .then(([t, o]) => {
+        if (cancelled) return;
+        setData(t);
+        setOverview(o);
       })
       .catch((e: unknown) => {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Failed to load stats');
@@ -77,6 +94,12 @@ export function Stats() {
   const known = data.tools.filter((t) => toolBySlug[t.slug]);
   const max = known.length > 0 ? known[0].count : 0;
 
+  const topToolName = overview?.topTool
+    ? toolBySlug[overview.topTool]?.name ?? overview.topTool
+    : known[0]
+      ? toolBySlug[known[0].slug]?.name ?? known[0].slug
+      : '—';
+
   return (
     <article className="max-w-3xl space-y-6">
       <header className="space-y-2 border-b border-border pb-5">
@@ -84,7 +107,7 @@ export function Stats() {
           Live · updated every minute
         </div>
         <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight">
-          Most-used tools
+          Site stats
         </h1>
         <p className="text-sm text-muted leading-relaxed">
           Real session traffic from this site, no cookies and no personal data
@@ -94,15 +117,45 @@ export function Stats() {
         </p>
       </header>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Stat label="Total opens" value={data.totalCount.toLocaleString()} />
-        <Stat label="Distinct tools" value={data.totalTools.toLocaleString()} />
-        <Stat
-          label="Top tool"
-          value={known[0] ? toolBySlug[known[0].slug]?.name ?? known[0].slug : '—'}
-          small
-        />
-      </div>
+      {overview ? (
+        <section className="space-y-3">
+          <div className="text-2xs uppercase tracking-widest font-mono text-subtle">
+            Site overview
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Stat
+              label="Live now"
+              value={overview.liveUsers.toLocaleString()}
+              pulse={overview.liveUsers > 0}
+            />
+            <Stat
+              label="Total visits"
+              value={overview.totalVisits.toLocaleString()}
+            />
+            <Stat
+              label="Tool opens"
+              value={data.totalCount.toLocaleString()}
+            />
+            <Stat
+              label="Distinct tools used"
+              value={overview.distinctTools.toLocaleString()}
+            />
+          </div>
+        </section>
+      ) : null}
+
+      <section className="space-y-3">
+        <div className="text-2xs uppercase tracking-widest font-mono text-subtle">
+          Most-used tools
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Stat label="Top tool" value={topToolName} small />
+          <Stat
+            label="Top tool opens"
+            value={(overview?.topToolCount ?? known[0]?.count ?? 0).toLocaleString()}
+          />
+        </div>
+      </section>
 
       {known.length === 0 ? (
         <p className="text-sm text-subtle">No data yet — open a tool to start counting.</p>
@@ -162,14 +215,22 @@ function Stat({
   label,
   value,
   small = false,
+  pulse = false,
 }: {
   label: string;
   value: string;
   small?: boolean;
+  pulse?: boolean;
 }) {
   return (
     <div className="card p-3 space-y-1">
-      <div className="text-2xs uppercase tracking-wide font-mono text-subtle">
+      <div className="text-2xs uppercase tracking-wide font-mono text-subtle flex items-center gap-1.5">
+        {pulse ? (
+          <span className="relative inline-flex h-1.5 w-1.5" aria-hidden>
+            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 animate-ping" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+          </span>
+        ) : null}
         {label}
       </div>
       <div

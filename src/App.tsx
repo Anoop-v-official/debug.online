@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { NotFound } from './pages/NotFound';
@@ -10,6 +10,8 @@ import { Contact } from './pages/Contact';
 import { Blog } from './pages/Blog';
 import { BlogPost } from './pages/BlogPost';
 import { Stats } from './pages/Stats';
+import { Embed } from './pages/Embed';
+import { EmbedPage } from './pages/EmbedPage';
 import { CommandPalette } from './components/CommandPalette';
 import { CookieBanner } from './components/CookieBanner';
 import { InstallBanner } from './components/InstallBanner';
@@ -27,11 +29,24 @@ const ToolPage = lazy(() =>
 export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const recordVisitLocal = useHistoryStore((s) => s.record);
   const recordVisit = (slug: string) => {
     recordVisitLocal(slug);
     if (!isTauri) trackToolOpen(slug);
   };
+
+  // Embed routes render the bare tool — no header, footer, ads, palette or
+  // cookie banner. Everything that would clutter or break iframes is skipped.
+  if (location.pathname.startsWith('/embed/')) {
+    return (
+      <Suspense fallback={<div className="p-4 text-sm text-subtle">Loading…</div>}>
+        <Routes>
+          <Route path="/embed/:slug" element={<EmbedPage />} />
+        </Routes>
+      </Suspense>
+    );
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -108,6 +123,7 @@ export function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/stats" element={<Stats />} />
+          <Route path="/embed" element={<Embed />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

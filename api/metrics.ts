@@ -161,17 +161,76 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     const kind = String(req.query.kind ?? 'tools');
-    if (kind !== 'tools') {
-      res.status(400).json({ error: 'kind must be "tools"' });
+
+    if (kind === 'tools') {
+      const limit = Math.min(
+        Math.max(parseInt(String(req.query.limit ?? '20'), 10) || 20, 1),
+        100,
+      );
+      await handleToolsGet(limit, res);
       return;
     }
-    const limit = Math.min(
-      Math.max(parseInt(String(req.query.limit ?? '20'), 10) || 20, 1),
-      100,
-    );
-    await handleToolsGet(limit, res);
+
+    if (kind === 'overview') {
+      await handleOverviewGet(res);
+      return;
+    }
+
+    res.status(400).json({ error: 'kind must be "tools" or "overview"' });
     return;
   }
 
   res.status(405).json({ error: 'GET or POST only' });
+}
+
+async function handleOverviewGet(res: VercelResponse) {
+  const now = Date.now();
+  const cutoff = now - STALE_MS;
+
+  if (KV_URL && KV_TOKEN) {
+    try {
+      const out = await kvPipeline([
+        ['ZREMRANGEBYSCORE', ONLINE_KEY, 0, cutoff],
+        ['ZCARD', ONLINE_KEY],
+        ['GET', TOTAL_KEY],
+        ['ZCARD', KEY_TOOLS],
+        ['ZREVRANGE', KEY_TOOLS, 0, 0, 'WITHSCORES'],
+      ]);
+      const liveUsers = Number(out?.[1]?.result ?? 0) || 0;
+      const totalVisits = Number(out?.[2]?.result ?? 0) || 0;
+      const distinctTools = Number(out?.[3]?.result ?? 0) || 0;
+      const topRaw = (out?.[4]?.result ?? []) as unknown[];
+      const topTool = topRaw.length >= 2 ? String(topRaw[0]) : null;
+      const topToolCount = topRaw.length >= 2 ? Number(topRaw[1]) || 0 : 0;
+      res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=30');
+      res.status(200).json({
+        liveUsers,
+        totalVisits,
+        distinctTools,
+        topTool,
+        topToolCount,
+      });
+      return;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('metrics overview kv read error', e);
+    }
+  }
+
+  pruneMem(now);
+  let topTool: string | null = null;
+  let topToolCount = 0;
+  for (const [slug, count] of memCounts) {
+    if (count > topToolCount) {
+      topTool = slug;
+      topToolCount = count;
+    }
+  }
+  res.status(200).json({
+    liveUsers: memOnline.size,
+    totalVisits: memTotal,
+    distinctTools: memCounts.size,
+    topTool,
+    topToolCount,
+  });
 }

@@ -1,5 +1,6 @@
-import { type ReactNode, useEffect, useMemo, useRef } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Code2 } from 'lucide-react';
 import { type Tool, categoryLabels } from '../lib/tools';
 import { useFavoritesStore } from '../store/favorites';
 import { useSeo } from '../lib/seo';
@@ -7,6 +8,7 @@ import { AdSlot } from './AdSlot';
 import { ToolContentBlock } from './ToolContentBlock';
 import { RelatedTools } from './RelatedTools';
 import { ShareButton } from './ShareButton';
+import { EmbedModal } from './EmbedModal';
 import { loadShare } from '../lib/shareClient';
 
 const AD_SLOT = import.meta.env.VITE_ADSENSE_SLOT_TOOL ?? '';
@@ -36,6 +38,8 @@ export function ToolFrame({
   const toggle = useFavoritesStore((s) => s.toggle);
   const location = useLocation();
   const navigate = useNavigate();
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const isEmbed = location.pathname.startsWith('/embed/');
 
   // Latest applyState in a ref so we don't refire the hydration effect when
   // the consuming tool re-renders.
@@ -121,6 +125,11 @@ export function ToolFrame({
     jsonLd,
   });
 
+  // Embed mode: bare tool, no chrome, no ads, no long-form content.
+  if (isEmbed) {
+    return <div className="space-y-3">{children}</div>;
+  }
+
   const hasActions = !!actions || !!share;
 
   return (
@@ -152,17 +161,31 @@ export function ToolFrame({
             {tool.description}
           </p>
         </div>
-        {hasActions ? (
-          <div className="flex items-center gap-2 flex-wrap">
-            {actions}
-            {share ? <ShareButton toolSlug={tool.slug} getState={share.getState} /> : null}
-          </div>
-        ) : null}
+        <div className="flex items-center gap-2 flex-wrap">
+          {actions}
+          {share ? <ShareButton toolSlug={tool.slug} getState={share.getState} /> : null}
+          <button
+            type="button"
+            onClick={() => setEmbedOpen(true)}
+            aria-label="Embed this tool"
+            title="Embed this tool on your site"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-muted text-sm hover:border-border-strong hover:text-text transition-colors"
+          >
+            <Code2 className="w-4 h-4" aria-hidden />
+            <span className="hidden sm:inline">Embed</span>
+          </button>
+        </div>
       </div>
       <div className="card p-4 sm:p-5">{children}</div>
       <AdSlot slot={AD_SLOT} />
       <ToolContentBlock tool={tool} />
       <RelatedTools tool={tool} />
+      <EmbedModal
+        open={embedOpen}
+        onClose={() => setEmbedOpen(false)}
+        tool={tool}
+      />
     </div>
   );
 }
+
