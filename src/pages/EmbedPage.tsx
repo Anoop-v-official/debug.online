@@ -3,9 +3,26 @@ import { useParams } from 'react-router-dom';
 import { toolBySlug } from '../lib/tools';
 import { NotFound } from './NotFound';
 
+function ensureNoindex() {
+  if (typeof document === 'undefined') return;
+  let meta = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute('name', 'robots');
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute('content', 'noindex, nofollow');
+}
+
 export function EmbedPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? toolBySlug[slug] : undefined;
+
+  // Embed pages are NOT for direct browsing — canonical is /tools/<slug>.
+  // Tell crawlers to skip indexing the bare iframe shell.
+  useEffect(() => {
+    ensureNoindex();
+  }, []);
 
   // Notify the host page (if we're in an iframe) of our content height,
   // so it can resize the iframe to fit.

@@ -12,6 +12,7 @@ import { BlogPost } from './pages/BlogPost';
 import { Stats } from './pages/Stats';
 import { Embed } from './pages/Embed';
 import { EmbedPage } from './pages/EmbedPage';
+import { Changelog } from './pages/Changelog';
 import { CommandPalette } from './components/CommandPalette';
 import { CookieBanner } from './components/CookieBanner';
 import { InstallBanner } from './components/InstallBanner';
@@ -123,6 +124,7 @@ export function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/stats" element={<Stats />} />
+          <Route path="/changelog" element={<Changelog />} />
           <Route path="/embed" element={<Embed />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

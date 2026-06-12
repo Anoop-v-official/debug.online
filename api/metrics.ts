@@ -14,6 +14,13 @@ const KEY_TOOLS = 'stats:tools';
 const SLUG_RE = /^[a-z0-9-]{2,64}$/;
 const SID_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
+// Search analytics (empty/no-result queries)
+const KEY_SEARCH_MISS = 'stats:searchMiss';
+
+// Tool requests / feedback
+const KEY_REQUESTS = 'stats:requests';
+const REQUEST_MAX_LEN = 500;
+
 // In-process fallback for local dev / when KV isn't configured.
 const memOnline = new Map<string, number>();
 const memSeen = new Map<string, number>();
@@ -94,6 +101,53 @@ async function handleTrackPost(slug: string, res: VercelResponse) {
   res.status(200).json({ ok: true });
 }
 
+async function handleSearchMiss(query: string, res: VercelResponse) {
+  const normalized = query.trim().toLowerCase().slice(0, 60);
+  if (!normalized) {
+    res.status(400).json({ error: 'empty query' });
+    return;
+  }
+  if (KV_URL && KV_TOKEN) {
+    try {
+      await kvPipeline([['ZINCRBY', KEY_SEARCH_MISS, 1, normalized]]);
+      res.status(200).json({ ok: true });
+      return;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('metrics search-miss kv error', e);
+    }
+  }
+  res.status(200).json({ ok: true });
+}
+
+async function handleRequest(
+  body: { text?: unknown; email?: unknown },
+  res: VercelResponse,
+) {
+  const text = typeof body.text === 'string' ? body.text.trim().slice(0, REQUEST_MAX_LEN) : '';
+  const email = typeof body.email === 'string' ? body.email.trim().slice(0, 200) : '';
+  if (!text) {
+    res.status(400).json({ error: 'text required' });
+    return;
+  }
+  const entry = JSON.stringify({ text, email, at: Date.now() });
+  if (KV_URL && KV_TOKEN) {
+    try {
+      // Store as a list, capped at the last 500 entries to bound storage.
+      await kvPipeline([
+        ['LPUSH', KEY_REQUESTS, entry],
+        ['LTRIM', KEY_REQUESTS, 0, 499],
+      ]);
+      res.status(200).json({ ok: true });
+      return;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('metrics request kv error', e);
+    }
+  }
+  res.status(200).json({ ok: true });
+}
+
 async function handleToolsGet(limit: number, res: VercelResponse) {
   if (KV_URL && KV_TOKEN) {
     try {
@@ -132,7 +186,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.method === 'POST') {
-    const body = (req.body ?? {}) as { kind?: unknown; sid?: unknown; slug?: unknown };
+    const body = (req.body ?? {}) as Record<string, unknown>;
     const kind = typeof body.kind === 'string' ? body.kind : '';
 
     if (kind === 'presence') {
@@ -155,7 +209,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    res.status(400).json({ error: 'kind must be "presence" or "track"' });
+    if (kind === 'search-miss') {
+      const query = typeof (body as { query?: unknown }).query === 'string'
+        ? ((body as { query: string }).query)
+        : '';
+      await handleSearchMiss(query, res);
+      return;
+    }
+
+    if (kind === 'request') {
+      await handleRequest(body as { text?: unknown; email?: unknown }, res);
+      return;
+    }
+
+    res.status(400).json({ error: 'kind must be "presence", "track", "search-miss" or "request"' });
     return;
   }
 

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useSeo } from '../lib/seo';
 import { postBySlug, posts, relatedPostsByTags } from '../blog';
 import { NotFound } from './NotFound';
+import { ShareButtons } from '../components/ShareButtons';
 
 export function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -89,6 +90,9 @@ export function BlogPost() {
           {post.title}
         </h1>
         <p className="text-muted text-base leading-relaxed">{post.description}</p>
+        <div className="pt-1">
+          <ShareButtons path={`/blog/${post.slug}`} title={post.title} />
+        </div>
       </header>
 
       <div

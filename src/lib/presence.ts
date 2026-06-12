@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { hasFullConsent, subscribeConsent } from './consent';
 
 const HEARTBEAT_MS = 25_000;
 const SID_KEY = 'debugdaily.sid';
@@ -59,6 +60,17 @@ async function beat() {
 
 function start() {
   if (started || typeof window === 'undefined') return;
+  // Honor consent: heartbeats touch /api/metrics which records the sid in KV.
+  // Don't fire until consent is granted. Resume automatically when granted.
+  if (!hasFullConsent()) {
+    const unsub = subscribeConsent((s) => {
+      if (s === 'granted') {
+        unsub();
+        start();
+      }
+    });
+    return;
+  }
   started = true;
   beat();
   timer = window.setInterval(beat, HEARTBEAT_MS);

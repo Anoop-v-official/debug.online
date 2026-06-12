@@ -9,6 +9,7 @@ import { ToolContentBlock } from './ToolContentBlock';
 import { RelatedTools } from './RelatedTools';
 import { ShareButton } from './ShareButton';
 import { EmbedModal } from './EmbedModal';
+import { ToolViewCount } from './ToolViewCount';
 import { loadShare } from '../lib/shareClient';
 
 const AD_SLOT = import.meta.env.VITE_ADSENSE_SLOT_TOOL ?? '';
@@ -136,12 +137,13 @@ export function ToolFrame({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs text-muted font-mono mb-1.5">
+          <div className="flex items-center gap-2 text-xs text-muted font-mono mb-1.5 flex-wrap">
             <Link to="/" className="hover:text-text transition-colors">
               ← All tools
             </Link>
             <span className="text-subtle">/</span>
             <span className="chip">{categoryLabels[tool.category]}</span>
+            <ToolViewCount slug={tool.slug} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight flex items-center gap-3">
             {tool.name}

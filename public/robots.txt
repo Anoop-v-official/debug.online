@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# Don't index API endpoints or the bare embed views
+# (embeds canonical to /tools/<slug>, but explicit disallow is belt-and-braces)
+Disallow: /api/
+Disallow: /embed/
+
 Sitemap: https://debugdaily.online/sitemap.xml

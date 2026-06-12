@@ -1,7 +1,9 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from './Header';
 import { TotalVisits } from './TotalVisits';
+import { BackToTop } from './BackToTop';
+import { RequestToolModal } from './RequestToolModal';
 
 export function Layout({
   children,
@@ -10,6 +12,7 @@ export function Layout({
   children: ReactNode;
   onOpenPalette: () => void;
 }) {
+  const [requestOpen, setRequestOpen] = useState(false);
   return (
     <div className="min-h-screen flex flex-col">
       <a href="#main" className="skip-link">
@@ -39,6 +42,16 @@ export function Layout({
             <Link to="/stats" className="hover:text-text">
               Stats
             </Link>
+            <Link to="/changelog" className="hover:text-text">
+              What&apos;s new
+            </Link>
+            <button
+              type="button"
+              onClick={() => setRequestOpen(true)}
+              className="hover:text-text"
+            >
+              Request a tool
+            </button>
             <Link to="/about" className="hover:text-text">
               About
             </Link>
@@ -54,6 +67,8 @@ export function Layout({
           </nav>
         </div>
       </footer>
+      <BackToTop />
+      <RequestToolModal open={requestOpen} onClose={() => setRequestOpen(false)} />
     </div>
   );
 }

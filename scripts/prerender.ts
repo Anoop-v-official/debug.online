@@ -98,7 +98,7 @@ routes.push({
   title:
     'Free Developer Tools Online | debugdaily — JSON Formatter, JWT Decoder, IP Lookup & 78 More',
   description:
-    'debugdaily.online is the free online toolkit for developers, DevOps engineers & sysadmins. JSON formatter, JWT decoder, cron builder, SSL checker, IP lookup and 78 tools. No login. No install. Always free.',
+    'debugdaily.online is the free online toolkit for developers, DevOps engineers & sysadmins. JSON formatter, JWT decoder, cron builder, SSL checker, IP lookup and 80+ tools. No login. No install. Always free.',
 });
 
 // Static pages
@@ -107,7 +107,7 @@ const STATIC_PAGES: RouteMeta[] = [
     path: '/about',
     title: 'About debugdaily',
     description:
-      'debugdaily is a free, browser-first toolkit of 78 developer and IT utilities with optional AI-powered Smart Context explanations.',
+      'debugdaily is a free, browser-first toolkit of 80+ developer and IT utilities with optional AI-powered Smart Context explanations.',
   },
   {
     path: '/privacy',
@@ -144,6 +144,12 @@ const STATIC_PAGES: RouteMeta[] = [
     title: 'Embed Tools — debugdaily',
     description:
       'Drop any debugdaily tool into your blog, docs, or website with one line of HTML. Free forever, no API key required.',
+  },
+  {
+    path: '/changelog',
+    title: "What's New — debugdaily Changelog",
+    description:
+      'Recent updates to debugdaily.online — new tools, features, fixes and editorial content. Updated continuously.',
   },
 ];
 routes.push(...STATIC_PAGES);

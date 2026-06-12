@@ -25,6 +25,8 @@ import { useFavoritesStore } from '../store/favorites';
 import { sniff, type SniffResult } from '../lib/sniff';
 import { setSmartPaste } from '../lib/smartPaste';
 import { TrendingTool } from '../components/TrendingTool';
+import { RequestToolModal } from '../components/RequestToolModal';
+import { reportSearchMiss } from '../lib/searchMiss';
 
 type RoleCategory = 'backend' | 'frontend' | 'devops' | 'sysadmin' | 'security';
 type Filter = 'all' | 'trending' | 'new' | 'favorites';
@@ -1595,38 +1597,64 @@ interface FlatGridProps {
 }
 
 function FlatGrid({ tools, focusIdx, favoriteSlugs, onToggleFavorite, onOpen, query, filter }: FlatGridProps) {
-  if (tools.length === 0) {
-    return (
-      <div className="card p-10 text-center space-y-2 mb-12">
-        <div className="text-2xl">¯\_(ツ)_/¯</div>
-        <p className="text-muted text-sm">
-          {filter === 'favorites' ? (
-            <>
-              No favorites yet. Bookmark tools with the <Star className="inline w-3.5 h-3.5 -mt-0.5" /> icon.
-            </>
-          ) : query ? (
-            <>No tools match "{query}".</>
-          ) : (
-            <>Nothing here yet.</>
-          )}
-        </p>
-      </div>
-    );
-  }
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-12" role="list">
-      {tools.map((tool, i) => (
-        <ToolCard
-          key={tool.id}
-          tool={tool}
-          focused={i === focusIdx}
-          isFavorite={!!tool.existingSlug && favoriteSlugs.includes(tool.existingSlug)}
-          onToggleFavorite={onToggleFavorite}
-          onOpen={onOpen}
-          stagger={i}
-        />
-      ))}
-    </ul>
+    <>
+      {tools.length === 0 ? (
+        <EmptyState query={query} filter={filter} />
+      ) : null}
+      {tools.length === 0 ? null : (
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-12" role="list">
+          {tools.map((tool, i) => (
+            <ToolCard
+              key={tool.id}
+              tool={tool}
+              focused={i === focusIdx}
+              isFavorite={!!tool.existingSlug && favoriteSlugs.includes(tool.existingSlug)}
+              onToggleFavorite={onToggleFavorite}
+              onOpen={onOpen}
+              stagger={i}
+            />
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function EmptyState({ query, filter }: { query: string; filter: Filter }) {
+  const [requestOpen, setRequestOpen] = useState(false);
+
+  // Track empty-search queries so we can see what users want that we don't have.
+  useEffect(() => {
+    if (query && filter === 'all') reportSearchMiss(query);
+  }, [query, filter]);
+
+  return (
+    <div className="card p-10 text-center space-y-3 mb-12">
+      <div className="text-2xl">¯\_(ツ)_/¯</div>
+      <p className="text-muted text-sm">
+        {filter === 'favorites' ? (
+          <>
+            No favorites yet. Bookmark tools with the{' '}
+            <Star className="inline w-3.5 h-3.5 -mt-0.5" /> icon.
+          </>
+        ) : query ? (
+          <>No tools match &quot;{query}&quot;.</>
+        ) : (
+          <>Nothing here yet.</>
+        )}
+      </p>
+      {query && filter !== 'favorites' ? (
+        <button
+          type="button"
+          onClick={() => setRequestOpen(true)}
+          className="inline-flex items-center gap-2 px-3 h-9 rounded-md border border-accent/40 bg-accent/10 text-accent text-sm hover:bg-accent/15 transition-colors"
+        >
+          Request &quot;{query}&quot; as a tool
+        </button>
+      ) : null}
+      <RequestToolModal open={requestOpen} onClose={() => setRequestOpen(false)} />
+    </div>
   );
 }
 

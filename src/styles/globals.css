@@ -108,3 +108,56 @@
   .stripe-network { box-shadow: inset 3px 0 0 #ff7b72; }
   .stripe-convert { box-shadow: inset 3px 0 0 #79c0ff; }
 }
+
+/* ─────────────────────────  Print stylesheet  ─────────────────────────
+   Optimized for blog posts and tool pages — strips UI chrome, switches
+   to a light background and dark text, keeps links readable. */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  header, footer, nav, .print\:hidden {
+    display: none !important;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  article {
+    max-width: none !important;
+    color: #111111 !important;
+  }
+  /* Prose readability */
+  h1, h2, h3, h4 {
+    color: #000000 !important;
+    page-break-after: avoid;
+  }
+  p, li, dt, dd {
+    color: #1f1f1f !important;
+    orphans: 3;
+    widows: 3;
+  }
+  /* Code blocks */
+  pre, code {
+    background: #f4f4f5 !important;
+    color: #111111 !important;
+    border: 1px solid #d4d4d8 !important;
+    page-break-inside: avoid;
+  }
+  /* Show URL after links so printed copies are useful */
+  a[href^="http"]::after,
+  a[href^="/"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #555;
+  }
+  a {
+    color: #0c4a6e !important;
+    text-decoration: underline;
+  }
+  /* Hide internal-only widgets */
+  [role="dialog"], [aria-label="Back to top"] {
+    display: none !important;
+  }
+}

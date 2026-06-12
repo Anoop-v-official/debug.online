@@ -1,3 +1,5 @@
+import { hasFullConsent } from './consent';
+
 const SESSION_KEY = 'debugdaily.tracked';
 const SLUG_RE = /^[a-z0-9-]{2,64}$/;
 
@@ -22,6 +24,8 @@ function writeTracked(set: Set<string>) {
 
 export function trackToolOpen(slug: string): void {
   if (!SLUG_RE.test(slug)) return;
+  // Honor consent — tool tracking is non-essential aggregate analytics.
+  if (!hasFullConsent()) return;
   const tracked = readTracked();
   if (tracked.has(slug)) return;
   tracked.add(slug);
